@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+        <PropertyGroup>
+            <TargetFramework>net10.0</TargetFramework>
+            <Version>1.0.0</Version>
+        </PropertyGroup>
+    <PropertyGroup>
+        <CodeAnalysisRuleSet>..\shared\DevArchitectureCodeAnalysis.ruleset</CodeAnalysisRuleSet>
+    </PropertyGroup>
+        <ItemGroup>
+          <Compile Remove="Helpers\EnumerableExtensions.cs" />
+        </ItemGroup>
+
+<ItemGroup>
+    <PackageReference Include="AutoMapper" Version="16.1.1" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
+    <PackageReference Include="Hangfire.InMemory" Version="1.0.0" />
+    <PackageReference Include="Hangfire.RecurringJobExtensions" Version="1.1.6" />
+    <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Refit" Version="11.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
+    <PackageReference Include="System.ServiceModel.Duplex" Version="6.0.0" />
+    <PackageReference Include="System.ServiceModel.Http" Version="10.0.652802" />
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="10.0.652802" />
+    <PackageReference Include="System.ServiceModel.Security" Version="6.0.0" />    
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
+    <ProjectReference Include="..\Entities\Entities.csproj" />
+  </ItemGroup>
+ <ItemGroup>
+   <WCFMetadata Include="Connected Services" />
+ </ItemGroup> 
+</Project>

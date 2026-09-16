@@ -13,19 +13,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace DataAccess.Concrete.EntityFramework.Contexts
 {
-    /// <summary>
-    /// Because this context is followed by migration for more than one provider
-    /// works on PostGreSql db by default. If you want to pass sql
-    /// When adding AddDbContext, use MsDbContext derived from it.
-    /// </summary>
     public class ProjectDbContext : DbContext
     {
-        /// <summary>
-        /// in constructor we get IConfiguration, parallel to more than one db
-        /// we can create migration.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="configuration"></param>
         public ProjectDbContext(DbContextOptions<ProjectDbContext> options, IConfiguration configuration)
             : base(options)
         {
@@ -34,16 +23,10 @@ namespace DataAccess.Concrete.EntityFramework.Contexts
             AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", true);
         }
 
-        /// <summary>
-        /// Let's also implement the general version.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="configuration"></param>
         protected ProjectDbContext(DbContextOptions options, IConfiguration configuration)
             : base(options)
         {
             Configuration = configuration;
-           
         }
 
         public DbSet<OperationClaim> OperationClaims { get; set; }
@@ -69,6 +52,13 @@ namespace DataAccess.Concrete.EntityFramework.Contexts
         public DbSet<StudentParent> StudentParents { get; set; }
         public DbSet<StudentBranch> StudentBranches { get; set; }
         public DbSet<TeacherBranch> TeacherBranches { get; set; }
+
+        // Private Course & Fee Entities
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<CourseEnrollment> CourseEnrollments { get; set; }
+        public DbSet<FeeDue> FeeDues { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<Attendance> Attendances { get; set; }
 
         protected IConfiguration Configuration { get; }
 
@@ -168,6 +158,67 @@ namespace DataAccess.Concrete.EntityFramework.Contexts
                 .HasOne(tb => tb.Branch)
                 .WithMany(b => b.TeacherBranches)
                 .HasForeignKey(tb => tb.BranchId);
+
+            // Course & Fee Configurations
+            modelBuilder.Entity<Course>()
+                .HasOne(c => c.Teacher)
+                .WithMany()
+                .HasForeignKey(c => c.TeacherId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CourseEnrollment>()
+                .HasOne(ce => ce.Student)
+                .WithMany()
+                .HasForeignKey(ce => ce.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CourseEnrollment>()
+                .HasOne(ce => ce.Course)
+                .WithMany(c => c.CourseEnrollments)
+                .HasForeignKey(ce => ce.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeeDue>()
+                .HasOne(fd => fd.CourseEnrollment)
+                .WithMany(ce => ce.FeeDues)
+                .HasForeignKey(fd => fd.CourseEnrollmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeeDue>()
+                .HasOne(fd => fd.Student)
+                .WithMany()
+                .HasForeignKey(fd => fd.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.FeeDue)
+                .WithMany(fd => fd.Payments)
+                .HasForeignKey(p => p.FeeDueId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.Student)
+                .WithMany()
+                .HasForeignKey(p => p.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.Parent)
+                .WithMany()
+                .HasForeignKey(p => p.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.Course)
+                .WithMany(c => c.Attendances)
+                .HasForeignKey(a => a.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.Student)
+                .WithMany()
+                .HasForeignKey(a => a.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

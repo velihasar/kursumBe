@@ -161,6 +161,12 @@ namespace Business
         public void ConfigureDevelopmentServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<IPaymentRepository, PaymentRepository>();
+            services.AddTransient<IFeeDueRepository, FeeDueRepository>();
+            services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
+            services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
+            services.AddTransient<ICourseRepository, CourseRepository>();
+            services.AddTransient<IAttendanceRepository, AttendanceRepository>();
             services.AddTransient<ITeacherBranchRepository, TeacherBranchRepository>();
             services.AddTransient<IStudentBranchRepository, StudentBranchRepository>();
             services.AddTransient<ITenantUserRepository, TenantUserRepository>();
@@ -195,6 +201,12 @@ namespace Business
         public void ConfigureStagingServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<IPaymentRepository, PaymentRepository>();
+            services.AddTransient<IFeeDueRepository, FeeDueRepository>();
+            services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
+            services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
+            services.AddTransient<ICourseRepository, CourseRepository>();
+            services.AddTransient<IAttendanceRepository, AttendanceRepository>();
             services.AddTransient<ITeacherBranchRepository, TeacherBranchRepository>();
             services.AddTransient<IStudentBranchRepository, StudentBranchRepository>();
             services.AddTransient<ITenantUserRepository, TenantUserRepository>();
@@ -227,6 +239,12 @@ namespace Business
         public void ConfigureProductionServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<IPaymentRepository, PaymentRepository>();
+            services.AddTransient<IFeeDueRepository, FeeDueRepository>();
+            services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
+            services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
+            services.AddTransient<ICourseRepository, CourseRepository>();
+            services.AddTransient<IAttendanceRepository, AttendanceRepository>();
             services.AddTransient<ITeacherBranchRepository, TeacherBranchRepository>();
             services.AddTransient<IStudentBranchRepository, StudentBranchRepository>();
             services.AddTransient<ITenantUserRepository, TenantUserRepository>();

@@ -25,7 +25,7 @@ namespace Business.Handlers.StudentParents.Commands
     /// </summary>
     public class CreateStudentParentCommand : IRequest<IDataResult<StudentParentCreateResponseDto>>
     {
-
+        public int? TenantId { get; set; }
         public int StudentId { get; set; }
         public int ParentId { get; set; }
         public string Relationship { get; set; }
@@ -35,10 +35,12 @@ namespace Business.Handlers.StudentParents.Commands
         public class CreateStudentParentCommandHandler : IRequestHandler<CreateStudentParentCommand, IDataResult<StudentParentCreateResponseDto>>
         {
             private readonly IStudentParentRepository _studentParentRepository;
+            private readonly IParentRepository _parentRepository;
             private readonly IMediator _mediator;
-            public CreateStudentParentCommandHandler(IStudentParentRepository studentParentRepository, IMediator mediator)
+            public CreateStudentParentCommandHandler(IStudentParentRepository studentParentRepository, IParentRepository parentRepository, IMediator mediator)
             {
                 _studentParentRepository = studentParentRepository;
+                _parentRepository = parentRepository;
                 _mediator = mediator;
             }
 
@@ -48,8 +50,23 @@ namespace Business.Handlers.StudentParents.Commands
             [SecuredOperation(Priority = 1)]
             public async Task<IDataResult<StudentParentCreateResponseDto>> Handle(CreateStudentParentCommand request, CancellationToken cancellationToken)
             {
-                var tenantId = UserInfoExtensions.GetTenantIdOrZero();
+                var userTenantId = UserInfoExtensions.GetTenantIdOrZero();
                 var userId = UserInfoExtensions.GetUserIdOrZero();
+
+                int targetTenantId = userTenantId > 0 ? userTenantId : (request.TenantId ?? 0);
+                if (targetTenantId <= 0)
+                {
+                    var parent = await _parentRepository.GetAsync(p => p.Id == request.ParentId);
+                    if (parent != null && parent.TenantId > 0)
+                    {
+                        targetTenantId = parent.TenantId;
+                    }
+                }
+
+                if (targetTenantId <= 0)
+                {
+                    return new ErrorDataResult<StudentParentCreateResponseDto>("SuperAdmin olarak işlem yapmaktasınız. Lütfen geçerli bir kurum (kurs/okul) seçiniz.");
+                }
 
                 var isThereStudentParentRecord = _studentParentRepository.Query().Any(StudentParentFiltersHelper.CreateStudentParentCommandFilter(request));
 
@@ -71,7 +88,7 @@ namespace Business.Handlers.StudentParents.Commands
 
                 var addedStudentParent = new StudentParent
                 {
-                    TenantId = tenantId,
+                    TenantId = targetTenantId,
                     StudentId = request.StudentId,
                     ParentId = request.ParentId,
                     Relationship = request.Relationship,

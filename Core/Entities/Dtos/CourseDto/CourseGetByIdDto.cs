@@ -19,6 +19,8 @@ namespace Core.Entities.Dtos.CourseDto
         public string EndTime { get; set; }
         public int? TeacherId { get; set; }
         public string TeacherName { get; set; }
+        public int? BranchId { get; set; }
+        public string BranchName { get; set; }
         public bool? IsActive { get; set; }
     }
 }

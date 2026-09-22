@@ -34,6 +34,7 @@ namespace Business.Handlers.Courses.Queries
                 var userTenantId = UserInfoExtensions.GetTenantIdOrZero();
                 var query = _courseRepository.Query()
                     .Include(x => x.Tenant)
+                    .Include(x => x.Branch)
                     .Include(x => x.Teacher).ThenInclude(t => t.Person);
 
                 var course = await query.FirstOrDefaultAsync(p => p.Id == request.Id && p.IsDeleted == false && (userTenantId <= 0 || p.TenantId == userTenantId), cancellationToken);
@@ -46,6 +47,8 @@ namespace Business.Handlers.Courses.Queries
                     Id = course.Id,
                     TenantId = course.TenantId,
                     TenantName = course.Tenant != null ? course.Tenant.Name : null,
+                    BranchId = course.BranchId,
+                    BranchName = course.Branch != null ? course.Branch.Name : null,
                     Name = course.Name,
                     Code = course.Code,
                     Description = course.Description,

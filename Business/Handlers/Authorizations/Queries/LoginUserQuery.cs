@@ -24,6 +24,7 @@ namespace Business.Handlers.Authorizations.Queries
         {
             private readonly IUserRepository _userRepository;
             private readonly ITenantUserRepository _tenantUserRepository;
+            private readonly ITenantRepository _tenantRepository;
             private readonly ITokenHelper _tokenHelper;
             private readonly IMediator _mediator;
             private readonly ICacheManager _cacheManager;
@@ -31,12 +32,14 @@ namespace Business.Handlers.Authorizations.Queries
             public LoginUserQueryHandler(
                 IUserRepository userRepository,
                 ITenantUserRepository tenantUserRepository,
+                ITenantRepository tenantRepository,
                 ITokenHelper tokenHelper,
                 IMediator mediator,
                 ICacheManager cacheManager)
             {
                 _userRepository = userRepository;
                 _tenantUserRepository = tenantUserRepository;
+                _tenantRepository = tenantRepository;
                 _tokenHelper = tokenHelper;
                 _mediator = mediator;
                 _cacheManager = cacheManager;
@@ -58,10 +61,30 @@ namespace Business.Handlers.Authorizations.Queries
                 }
 
                 var claims = _userRepository.GetClaims(user.UserId);
-                var tenantUser = await _tenantUserRepository.GetAsync(tu => tu.UserId == user.UserId && tu.IsActive == true && tu.IsDeleted == false);
+                var tenantUser = await _tenantUserRepository.GetAsync(tu => tu.UserId == user.UserId && tu.IsDeleted == false);
                 if (tenantUser != null)
                 {
                     claims.Add(new Core.Entities.Concrete.OperationClaim { Name = $"TenantId:{tenantUser.TenantId}" });
+                }
+                else
+                {
+                    var isSuperAdmin = claims.Any(c => c.Name != null && (c.Name.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) || c.Name.Equals("SUPER_ADMIN", StringComparison.OrdinalIgnoreCase)));
+                    if (!isSuperAdmin)
+                    {
+                        var tenant = await _tenantRepository.GetAsync(t => t.CreatedBy == user.UserId && t.IsDeleted == false);
+                        if (tenant != null)
+                        {
+                            claims.Add(new Core.Entities.Concrete.OperationClaim { Name = $"TenantId:{tenant.Id}" });
+                        }
+                        else
+                        {
+                            var firstTenant = _tenantRepository.Query().FirstOrDefault(t => t.IsDeleted == false && t.IsActive == true);
+                            if (firstTenant != null)
+                            {
+                                claims.Add(new Core.Entities.Concrete.OperationClaim { Name = $"TenantId:{firstTenant.Id}" });
+                            }
+                        }
+                    }
                 }
 
                 var accessToken = _tokenHelper.CreateToken<DArchToken>(user, claims);

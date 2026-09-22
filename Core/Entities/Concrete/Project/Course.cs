@@ -16,7 +16,9 @@ namespace Core.Entities.Concrete.Project
         public string StartTime { get; set; } // Başlangıç saati (ör. 14:00)
         public string EndTime { get; set; } // Bitiş saati (ör. 16:00)
         public int? TeacherId { get; set; } // Öğretmen ID
+        public int? BranchId { get; set; } // Şube ID
 
+        public virtual Branch Branch { get; set; }
         public virtual Teacher Teacher { get; set; }
         public virtual ICollection<CourseEnrollment> CourseEnrollments { get; set; }
         public virtual ICollection<Attendance> Attendances { get; set; }

@@ -22,6 +22,7 @@ namespace Business.Handlers.Parents.Commands
     public class UpdateParentCommand : IRequest<IDataResult<ParentUpdateResponseDto>>
     {
         public int Id { get; set; }
+        public int? TenantId { get; set; }
         public int PersonId { get; set; }
         public bool IsActive { get; set; }
 
@@ -46,11 +47,12 @@ namespace Business.Handlers.Parents.Commands
                 if (isThereParentRecord == null)
                     return new ErrorDataResult<ParentUpdateResponseDto>("Kayıt bulunamadı.");
 
-                var tenantId = UserInfoExtensions.GetTenantIdOrZero();
+                var userTenantId = UserInfoExtensions.GetTenantIdOrZero();
                 var userId = UserInfoExtensions.GetUserIdOrZero();
-                if (tenantId > 0)
+                int targetTenantId = userTenantId > 0 ? userTenantId : (request.TenantId ?? 0);
+                if (targetTenantId > 0)
                 {
-                    isThereParentRecord.TenantId = tenantId;
+                    isThereParentRecord.TenantId = targetTenantId;
                 }
                 if (userId > 0)
                 {

@@ -25,6 +25,7 @@ namespace Business.Handlers.Parents.Commands
     /// </summary>
     public class CreateParentCommand : IRequest<IDataResult<ParentCreateResponseDto>>
     {
+        public int? TenantId { get; set; }
         public int PersonId { get; set; }
 
 
@@ -44,8 +45,15 @@ namespace Business.Handlers.Parents.Commands
             [SecuredOperation(Priority = 1)]
             public async Task<IDataResult<ParentCreateResponseDto>> Handle(CreateParentCommand request, CancellationToken cancellationToken)
             {
-                var tenantId = UserInfoExtensions.GetTenantIdOrZero();
+                var userTenantId = UserInfoExtensions.GetTenantIdOrZero();
                 var userId = UserInfoExtensions.GetUserIdOrZero();
+
+                int targetTenantId = userTenantId > 0 ? userTenantId : (request.TenantId ?? 0);
+
+                if (targetTenantId <= 0)
+                {
+                    return new ErrorDataResult<ParentCreateResponseDto>("SuperAdmin olarak işlem yapmaktasınız. Lütfen geçerli bir kurum (kurs/okul) seçiniz.");
+                }
 
                 var isThereParentRecord = _parentRepository.Query().Any(ParentFiltersHelper.CreateParentCommandFilter(request));
 
@@ -54,7 +62,7 @@ namespace Business.Handlers.Parents.Commands
 
                 var addedParent = new Parent
                 {
-                    TenantId = tenantId,
+                    TenantId = targetTenantId,
                     PersonId = request.PersonId,
                     IsActive = true,
                     IsDeleted = false,

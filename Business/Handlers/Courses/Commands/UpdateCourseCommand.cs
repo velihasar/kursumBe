@@ -20,14 +20,15 @@ namespace Business.Handlers.Courses.Commands
         public int Id { get; set; }
         public string Name { get; set; }
         public string Code { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
         public decimal Price { get; set; }
         public int FeeType { get; set; }
         public int? Capacity { get; set; }
-        public string DaysOfWeek { get; set; }
-        public string StartTime { get; set; }
-        public string EndTime { get; set; }
+        public string? DaysOfWeek { get; set; }
+        public string? StartTime { get; set; }
+        public string? EndTime { get; set; }
         public int? TeacherId { get; set; }
+        public int? BranchId { get; set; }
 
         public class UpdateCourseCommandHandler : IRequestHandler<UpdateCourseCommand, IDataResult<CourseUpdateResponseDto>>
         {
@@ -62,6 +63,7 @@ namespace Business.Handlers.Courses.Commands
                 isThereCourseRecord.StartTime = request.StartTime;
                 isThereCourseRecord.EndTime = request.EndTime;
                 isThereCourseRecord.TeacherId = request.TeacherId;
+                isThereCourseRecord.BranchId = request.BranchId;
                 isThereCourseRecord.UpdatedBy = userId > 0 ? userId : null;
                 isThereCourseRecord.UpdatedDate = System.DateTime.Now;
 
@@ -80,7 +82,8 @@ namespace Business.Handlers.Courses.Commands
                     DaysOfWeek = isThereCourseRecord.DaysOfWeek,
                     StartTime = isThereCourseRecord.StartTime,
                     EndTime = isThereCourseRecord.EndTime,
-                    TeacherId = isThereCourseRecord.TeacherId
+                    TeacherId = isThereCourseRecord.TeacherId,
+                    BranchId = isThereCourseRecord.BranchId
                 };
 
                 return new SuccessDataResult<CourseUpdateResponseDto>(dto, Messages.Updated);

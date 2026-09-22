@@ -21,6 +21,7 @@ namespace Business.Handlers.StudentParents.Commands
     public class UpdateStudentParentCommand : IRequest<IDataResult<StudentParentUpdateResponseDto>>
     {
         public int Id { get; set; }
+        public int? TenantId { get; set; }
         public int StudentId { get; set; }
         public int ParentId { get; set; }
         public string Relationship { get; set; }
@@ -48,11 +49,12 @@ namespace Business.Handlers.StudentParents.Commands
                 if (isThereStudentParentRecord == null)
                     return new ErrorDataResult<StudentParentUpdateResponseDto>("Kayıt bulunamadı.");
 
-                var tenantId = UserInfoExtensions.GetTenantIdOrZero();
+                var userTenantId = UserInfoExtensions.GetTenantIdOrZero();
                 var userId = UserInfoExtensions.GetUserIdOrZero();
-                if (tenantId > 0)
+                int targetTenantId = userTenantId > 0 ? userTenantId : (request.TenantId ?? 0);
+                if (targetTenantId > 0)
                 {
-                    isThereStudentParentRecord.TenantId = tenantId;
+                    isThereStudentParentRecord.TenantId = targetTenantId;
                 }
                 if (userId > 0)
                 {

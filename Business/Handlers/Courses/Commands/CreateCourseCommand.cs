@@ -22,23 +22,32 @@ namespace Business.Handlers.Courses.Commands
         public int? TenantId { get; set; }
         public string Name { get; set; }
         public string Code { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
         public decimal Price { get; set; }
         public int FeeType { get; set; }
         public int? Capacity { get; set; }
-        public string DaysOfWeek { get; set; }
-        public string StartTime { get; set; }
-        public string EndTime { get; set; }
+        public string? DaysOfWeek { get; set; }
+        public string? StartTime { get; set; }
+        public string? EndTime { get; set; }
         public int? TeacherId { get; set; }
+        public int? BranchId { get; set; }
 
         public class CreateCourseCommandHandler : IRequestHandler<CreateCourseCommand, IDataResult<CourseCreateResponseDto>>
         {
             private readonly ICourseRepository _courseRepository;
+            private readonly ITenantRepository _tenantRepository;
+            private readonly ITenantUserRepository _tenantUserRepository;
             private readonly IMediator _mediator;
 
-            public CreateCourseCommandHandler(ICourseRepository courseRepository, IMediator mediator)
+            public CreateCourseCommandHandler(
+                ICourseRepository courseRepository,
+                ITenantRepository tenantRepository,
+                ITenantUserRepository tenantUserRepository,
+                IMediator mediator)
             {
                 _courseRepository = courseRepository;
+                _tenantRepository = tenantRepository;
+                _tenantUserRepository = tenantUserRepository;
                 _mediator = mediator;
             }
 
@@ -53,9 +62,34 @@ namespace Business.Handlers.Courses.Commands
 
                 int targetTenantId = userTenantId > 0 ? userTenantId : (request.TenantId ?? 0);
 
+                if (targetTenantId <= 0 && userId > 0)
+                {
+                    var tenantUser = await _tenantUserRepository.GetAsync(tu => tu.UserId == userId && tu.IsDeleted == false);
+                    if (tenantUser != null && tenantUser.TenantId > 0)
+                    {
+                        targetTenantId = tenantUser.TenantId;
+                    }
+                    else
+                    {
+                        var tenant = await _tenantRepository.GetAsync(t => t.CreatedBy == userId && t.IsDeleted == false);
+                        if (tenant != null && tenant.Id > 0)
+                        {
+                            targetTenantId = tenant.Id;
+                        }
+                        else
+                        {
+                            var firstTenant = _tenantRepository.Query().FirstOrDefault(t => t.IsDeleted == false && t.IsActive == true);
+                            if (firstTenant != null)
+                            {
+                                targetTenantId = firstTenant.Id;
+                            }
+                        }
+                    }
+                }
+
                 if (targetTenantId <= 0)
                 {
-                    return new ErrorDataResult<CourseCreateResponseDto>("SuperAdmin olarak işlem yapmaktasınız. Lütfen geçerli bir kurum (okul) seçiniz.");
+                    return new ErrorDataResult<CourseCreateResponseDto>("SuperAdmin olarak işlem yapmaktasınız. Lütfen geçerli bir kurum (okul/kurs) seçiniz.");
                 }
 
                 var isThereCourseRecord = _courseRepository.Query().Any(u => u.IsDeleted == false && u.TenantId == targetTenantId && u.Name == request.Name);
@@ -76,6 +110,7 @@ namespace Business.Handlers.Courses.Commands
                     StartTime = request.StartTime,
                     EndTime = request.EndTime,
                     TeacherId = request.TeacherId,
+                    BranchId = request.BranchId,
                     IsActive = true,
                     IsDeleted = false,
                     CreatedBy = userId > 0 ? userId : null,
@@ -97,7 +132,8 @@ namespace Business.Handlers.Courses.Commands
                     DaysOfWeek = addedCourse.DaysOfWeek,
                     StartTime = addedCourse.StartTime,
                     EndTime = addedCourse.EndTime,
-                    TeacherId = addedCourse.TeacherId
+                    TeacherId = addedCourse.TeacherId,
+                    BranchId = addedCourse.BranchId
                 };
 
                 return new SuccessDataResult<CourseCreateResponseDto>(dto, Messages.Added);

@@ -31,11 +31,19 @@ namespace Business.Handlers.CourseEnrollments.Commands
         public class CreateCourseEnrollmentCommandHandler : IRequestHandler<CreateCourseEnrollmentCommand, IDataResult<CourseEnrollmentCreateResponseDto>>
         {
             private readonly ICourseEnrollmentRepository _courseEnrollmentRepository;
+            private readonly ITenantRepository _tenantRepository;
+            private readonly ITenantUserRepository _tenantUserRepository;
             private readonly IMediator _mediator;
 
-            public CreateCourseEnrollmentCommandHandler(ICourseEnrollmentRepository courseEnrollmentRepository, IMediator mediator)
+            public CreateCourseEnrollmentCommandHandler(
+                ICourseEnrollmentRepository courseEnrollmentRepository,
+                ITenantRepository tenantRepository,
+                ITenantUserRepository tenantUserRepository,
+                IMediator mediator)
             {
                 _courseEnrollmentRepository = courseEnrollmentRepository;
+                _tenantRepository = tenantRepository;
+                _tenantUserRepository = tenantUserRepository;
                 _mediator = mediator;
             }
 
@@ -50,9 +58,34 @@ namespace Business.Handlers.CourseEnrollments.Commands
 
                 int targetTenantId = userTenantId > 0 ? userTenantId : (request.TenantId ?? 0);
 
+                if (targetTenantId <= 0 && userId > 0)
+                {
+                    var tenantUser = await _tenantUserRepository.GetAsync(tu => tu.UserId == userId && tu.IsDeleted == false);
+                    if (tenantUser != null && tenantUser.TenantId > 0)
+                    {
+                        targetTenantId = tenantUser.TenantId;
+                    }
+                    else
+                    {
+                        var tenant = await _tenantRepository.GetAsync(t => t.CreatedBy == userId && t.IsDeleted == false);
+                        if (tenant != null && tenant.Id > 0)
+                        {
+                            targetTenantId = tenant.Id;
+                        }
+                        else
+                        {
+                            var firstTenant = _tenantRepository.Query().FirstOrDefault(t => t.IsDeleted == false && t.IsActive == true);
+                            if (firstTenant != null)
+                            {
+                                targetTenantId = firstTenant.Id;
+                            }
+                        }
+                    }
+                }
+
                 if (targetTenantId <= 0)
                 {
-                    return new ErrorDataResult<CourseEnrollmentCreateResponseDto>("SuperAdmin olarak işlem yapmaktasınız. Lütfen geçerli bir kurum (okul) seçiniz.");
+                    return new ErrorDataResult<CourseEnrollmentCreateResponseDto>("SuperAdmin olarak işlem yapmaktasınız. Lütfen geçerli bir kurum (okul/kurs) seçiniz.");
                 }
 
                 var isThereCourseEnrollmentRecord = _courseEnrollmentRepository.Query().Any(u => u.IsDeleted == false && u.TenantId == targetTenantId && u.StudentId == request.StudentId && u.CourseId == request.CourseId);

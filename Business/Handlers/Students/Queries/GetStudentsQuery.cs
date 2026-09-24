@@ -53,6 +53,7 @@ namespace Business.Handlers.Students.Queries
                     TenantId = x.TenantId,
                     PersonId = x.PersonId,
                     StudentNumber = x.StudentNumber,
+                    ParentAccessCode = x.ParentAccessCode ?? $"KRS-{x.Id:D5}",
                     EnrollmentDate = x.EnrollmentDate,
                     FirstName = x.Person != null ? x.Person.FirstName : null,
                     LastName = x.Person != null ? x.Person.LastName : null,

@@ -161,6 +161,9 @@ namespace Business
         public void ConfigureDevelopmentServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<ICanteenProductRepository, CanteenProductRepository>();
+            services.AddTransient<IStudentWalletRepository, StudentWalletRepository>();
+            services.AddTransient<IStudentWalletTransactionRepository, StudentWalletTransactionRepository>();
             services.AddTransient<IPaymentRepository, PaymentRepository>();
             services.AddTransient<IFeeDueRepository, FeeDueRepository>();
             services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
@@ -201,6 +204,9 @@ namespace Business
         public void ConfigureStagingServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<ICanteenProductRepository, CanteenProductRepository>();
+            services.AddTransient<IStudentWalletRepository, StudentWalletRepository>();
+            services.AddTransient<IStudentWalletTransactionRepository, StudentWalletTransactionRepository>();
             services.AddTransient<IPaymentRepository, PaymentRepository>();
             services.AddTransient<IFeeDueRepository, FeeDueRepository>();
             services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
@@ -239,6 +245,9 @@ namespace Business
         public void ConfigureProductionServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<ICanteenProductRepository, CanteenProductRepository>();
+            services.AddTransient<IStudentWalletRepository, StudentWalletRepository>();
+            services.AddTransient<IStudentWalletTransactionRepository, StudentWalletTransactionRepository>();
             services.AddTransient<IPaymentRepository, PaymentRepository>();
             services.AddTransient<IFeeDueRepository, FeeDueRepository>();
             services.AddTransient<ICourseEnrollmentRepository, CourseEnrollmentRepository>();

@@ -8,6 +8,7 @@ namespace Core.Entities.Dtos.StudentDto
         public int Id { get; set; }
         public int PersonId { get; set; }
         public string StudentNumber { get; set; }
+        public string? ParentAccessCode { get; set; }
         public DateTime EnrollmentDate { get; set; }
     }
 }

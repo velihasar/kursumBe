@@ -33,11 +33,13 @@ namespace Business.Handlers.Payments.Commands
         public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, IDataResult<PaymentCreateResponseDto>>
         {
             private readonly IPaymentRepository _paymentRepository;
+            private readonly IFeeDueRepository _feeDueRepository;
             private readonly IMediator _mediator;
 
-            public CreatePaymentCommandHandler(IPaymentRepository paymentRepository, IMediator mediator)
+            public CreatePaymentCommandHandler(IPaymentRepository paymentRepository, IFeeDueRepository feeDueRepository, IMediator mediator)
             {
                 _paymentRepository = paymentRepository;
+                _feeDueRepository = feeDueRepository;
                 _mediator = mediator;
             }
 
@@ -76,6 +78,22 @@ namespace Business.Handlers.Payments.Commands
                 };
 
                 _paymentRepository.Add(addedPayment);
+
+                // If payment is linked to a FeeDue (Tahakkuk), update FeeDue balance and status
+                if (request.FeeDueId.HasValue && request.FeeDueId.Value > 0)
+                {
+                    var feeDue = await _feeDueRepository.GetAsync(f => f.Id == request.FeeDueId.Value && f.IsDeleted == false);
+                    if (feeDue != null)
+                    {
+                        feeDue.PaidAmount += request.Amount;
+                        feeDue.RemainingAmount = System.Math.Max(0, feeDue.Amount - feeDue.PaidAmount);
+                        feeDue.Status = feeDue.RemainingAmount <= 0 ? 2 : (feeDue.PaidAmount > 0 ? 1 : 0);
+                        feeDue.UpdatedBy = userId > 0 ? userId : null;
+                        feeDue.UpdatedDate = System.DateTime.Now;
+                        _feeDueRepository.Update(feeDue);
+                    }
+                }
+
                 await _paymentRepository.SaveChangesAsync();
 
                 var dto = new PaymentCreateResponseDto

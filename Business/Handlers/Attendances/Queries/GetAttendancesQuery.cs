@@ -19,6 +19,9 @@ namespace Business.Handlers.Attendances.Queries
     public class GetAttendancesQuery : IRequest<IDataResult<IEnumerable<AttendanceGetAllDto>>>
     {
         public int? TenantId { get; set; }
+        public int? CourseId { get; set; }
+        public int? StudentId { get; set; }
+        public System.DateTime? AttendanceDate { get; set; }
 
         public class GetAttendancesQueryHandler : IRequestHandler<GetAttendancesQuery, IDataResult<IEnumerable<AttendanceGetAllDto>>>
         {
@@ -53,7 +56,23 @@ namespace Business.Handlers.Attendances.Queries
                     query = query.Where(x => x.TenantId == request.TenantId.Value);
                 }
 
-                var list = await query.ToListAsync(cancellationToken);
+                if (request.CourseId.HasValue && request.CourseId.Value > 0)
+                {
+                    query = query.Where(x => x.CourseId == request.CourseId.Value);
+                }
+
+                if (request.StudentId.HasValue && request.StudentId.Value > 0)
+                {
+                    query = query.Where(x => x.StudentId == request.StudentId.Value);
+                }
+
+                if (request.AttendanceDate.HasValue)
+                {
+                    var date = request.AttendanceDate.Value.Date;
+                    query = query.Where(x => x.AttendanceDate.Date == date);
+                }
+
+                var list = await query.OrderByDescending(x => x.AttendanceDate).ToListAsync(cancellationToken);
                 var dtos = list.Select(x => new AttendanceGetAllDto
                 {
                     Id = x.Id,

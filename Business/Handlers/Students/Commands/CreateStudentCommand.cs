@@ -65,11 +65,14 @@ namespace Business.Handlers.Students.Commands
                 if (isThereStudentRecord)
                     return new ErrorDataResult<StudentCreateResponseDto>(Messages.NameAlreadyExist);
 
+                var accessCode = GenerateAccessCode(_studentRepository);
+
                 var addedStudent = new Student
                 {
                     TenantId = targetTenantId,
                     PersonId = request.PersonId,
                     StudentNumber = request.StudentNumber,
+                    ParentAccessCode = accessCode,
                     EnrollmentDate = request.EnrollmentDate,
                     IsActive = true,
                     IsDeleted = false,
@@ -85,10 +88,26 @@ namespace Business.Handlers.Students.Commands
                     Id = addedStudent.Id,
                     PersonId = addedStudent.PersonId,
                     StudentNumber = addedStudent.StudentNumber,
+                    ParentAccessCode = addedStudent.ParentAccessCode,
                     EnrollmentDate = addedStudent.EnrollmentDate
                 };
 
                 return new SuccessDataResult<StudentCreateResponseDto>(dto, Messages.Added);
+            }
+
+            private static string GenerateAccessCode(IStudentRepository studentRepository)
+            {
+                var random = new System.Random();
+                const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                string code;
+                do
+                {
+                    var codeStr = new string(System.Linq.Enumerable.Repeat(chars, 6)
+                        .Select(s => s[random.Next(s.Length)]).ToArray());
+                    code = $"KRS-{codeStr}";
+                } while (studentRepository.Query().Any(s => s.ParentAccessCode == code));
+
+                return code;
             }
         }
     }

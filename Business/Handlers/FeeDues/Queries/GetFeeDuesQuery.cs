@@ -40,6 +40,7 @@ namespace Business.Handlers.FeeDues.Queries
                 var userTenantId = UserInfoExtensions.GetTenantIdOrZero();
                 var query = _feeDueRepository.Query()
                     .Include(x => x.Tenant)
+                    .Include(x => x.CourseEnrollment).ThenInclude(ce => ce.Course)
                     .Include(x => x.Student).ThenInclude(s => s.Person)
                     .Where(x => x.IsDeleted == false);
 
@@ -59,6 +60,7 @@ namespace Business.Handlers.FeeDues.Queries
                     TenantId = x.TenantId,
                     TenantName = x.Tenant != null ? x.Tenant.Name : null,
                     CourseEnrollmentId = x.CourseEnrollmentId,
+                    CourseName = x.CourseEnrollment != null && x.CourseEnrollment.Course != null ? x.CourseEnrollment.Course.Name : null,
                     StudentId = x.StudentId,
                     StudentName = x.Student != null && x.Student.Person != null ? $"{x.Student.Person.FirstName} {x.Student.Person.LastName}".Trim() : null,
                     Period = x.Period,

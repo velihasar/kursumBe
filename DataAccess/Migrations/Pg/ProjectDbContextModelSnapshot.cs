@@ -389,6 +389,69 @@ namespace DataAccess.Migrations.Pg
                     b.ToTable("Branches");
                 });
 
+            modelBuilder.Entity("Core.Entities.Concrete.Project.CanteenProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Barcode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("StockQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("CanteenProducts");
+                });
+
             modelBuilder.Entity("Core.Entities.Concrete.Project.Course", b =>
                 {
                     b.Property<int>("Id")
@@ -826,6 +889,9 @@ namespace DataAccess.Migrations.Pg
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ParentAccessCode")
+                        .HasColumnType("text");
+
                     b.Property<int>("PersonId")
                         .HasColumnType("integer");
 
@@ -949,6 +1015,149 @@ namespace DataAccess.Migrations.Pg
                     b.HasIndex("TenantId");
 
                     b.ToTable("StudentParents");
+                });
+
+            modelBuilder.Entity("Core.Entities.Concrete.Project.StudentWallet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastTransactionDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalDeposited")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("TotalSpent")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("StudentWallets");
+                });
+
+            modelBuilder.Entity("Core.Entities.Concrete.Project.StudentWalletTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("BalanceBefore")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("CanteenProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("DeletedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("PaymentType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReceiptNo")
+                        .HasColumnType("text");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StudentWalletId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CanteenProductId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("StudentWalletId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("StudentWalletTransactions");
                 });
 
             modelBuilder.Entity("Core.Entities.Concrete.Project.Teacher", b =>
@@ -2596,6 +2805,17 @@ namespace DataAccess.Migrations.Pg
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("Core.Entities.Concrete.Project.CanteenProduct", b =>
+                {
+                    b.HasOne("Core.Entities.Concrete.Project.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("Core.Entities.Concrete.Project.Course", b =>
                 {
                     b.HasOne("Core.Entities.Concrete.Project.Branch", "Branch")
@@ -2810,6 +3030,58 @@ namespace DataAccess.Migrations.Pg
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("Core.Entities.Concrete.Project.StudentWallet", b =>
+                {
+                    b.HasOne("Core.Entities.Concrete.Project.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Concrete.Project.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Student");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Core.Entities.Concrete.Project.StudentWalletTransaction", b =>
+                {
+                    b.HasOne("Core.Entities.Concrete.Project.CanteenProduct", "CanteenProduct")
+                        .WithMany()
+                        .HasForeignKey("CanteenProductId");
+
+                    b.HasOne("Core.Entities.Concrete.Project.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Concrete.Project.StudentWallet", "StudentWallet")
+                        .WithMany("Transactions")
+                        .HasForeignKey("StudentWalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Concrete.Project.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CanteenProduct");
+
+                    b.Navigation("Student");
+
+                    b.Navigation("StudentWallet");
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("Core.Entities.Concrete.Project.Teacher", b =>
                 {
                     b.HasOne("Core.Entities.Concrete.Project.Person", "Person")
@@ -2931,6 +3203,11 @@ namespace DataAccess.Migrations.Pg
                     b.Navigation("Parents");
 
                     b.Navigation("StudentBranches");
+                });
+
+            modelBuilder.Entity("Core.Entities.Concrete.Project.StudentWallet", b =>
+                {
+                    b.Navigation("Transactions");
                 });
 
             modelBuilder.Entity("Core.Entities.Concrete.Project.Teacher", b =>

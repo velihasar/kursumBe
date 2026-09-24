@@ -60,6 +60,11 @@ namespace DataAccess.Concrete.EntityFramework.Contexts
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
 
+        // Student Wallet & Canteen Entities
+        public DbSet<StudentWallet> StudentWallets { get; set; }
+        public DbSet<StudentWalletTransaction> StudentWalletTransactions { get; set; }
+        public DbSet<CanteenProduct> CanteenProducts { get; set; }
+
         protected IConfiguration Configuration { get; }
 
         public override int SaveChanges()
@@ -219,6 +224,25 @@ namespace DataAccess.Concrete.EntityFramework.Contexts
                 .WithMany()
                 .HasForeignKey(a => a.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Student Wallet & Canteen Configurations
+            modelBuilder.Entity<StudentWallet>()
+                .HasOne(sw => sw.Student)
+                .WithMany()
+                .HasForeignKey(sw => sw.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StudentWalletTransaction>()
+                .HasOne(swt => swt.StudentWallet)
+                .WithMany(sw => sw.Transactions)
+                .HasForeignKey(swt => swt.StudentWalletId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StudentWalletTransaction>()
+                .HasOne(swt => swt.Student)
+                .WithMany()
+                .HasForeignKey(swt => swt.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

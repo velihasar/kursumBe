@@ -111,5 +111,22 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
+
+        /// <summary>
+        /// Automatically generate monthly fee dues for active course enrollments
+        /// </summary>
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(int))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPost("generate-monthly-dues")]
+        public async Task<IActionResult> GenerateMonthlyDues([FromBody] GenerateMonthlyFeeDuesCommand command)
+        {
+            var result = await Mediator.Send(command);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result.Message);
+        }
     }
 }

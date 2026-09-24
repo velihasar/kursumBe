@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,8 +31,27 @@ namespace Business.Handlers.Groups.Queries
             [CacheAspect(10)]
             public async Task<IDataResult<IEnumerable<Group>>> Handle(GetGroupsQuery request, CancellationToken cancellationToken)
             {
-                var list = await _groupRepository.GetListAsync();
-                return new SuccessDataResult<IEnumerable<Group>>(list.ToList());
+                var defaultRoles = new[] { "SuperAdmin", "KurumSahibi", "Öğretmen", "Veli" };
+                var existingGroups = (await _groupRepository.GetListAsync()).ToList();
+
+                bool hasChanges = false;
+                foreach (var roleName in defaultRoles)
+                {
+                    if (!existingGroups.Any(g => g.GroupName.Equals(roleName, System.StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var newGroup = new Group { GroupName = roleName };
+                        _groupRepository.Add(newGroup);
+                        existingGroups.Add(newGroup);
+                        hasChanges = true;
+                    }
+                }
+
+                if (hasChanges)
+                {
+                    await _groupRepository.SaveChangesAsync();
+                }
+
+                return new SuccessDataResult<IEnumerable<Group>>(existingGroups);
             }
         }
     }

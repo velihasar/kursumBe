@@ -10,6 +10,8 @@ namespace Core.Entities.Concrete.Project
 
         public string? StudentNumber { get; set; }
 
+        public string? ParentAccessCode { get; set; }
+
         public DateTime EnrollmentDate { get; set; }
 
         public Person Person { get; set; } = null!;

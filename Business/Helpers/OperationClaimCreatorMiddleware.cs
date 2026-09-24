@@ -64,6 +64,22 @@ namespace Business.Helpers
                     await groupRepository.SaveChangesAsync();
                 }
 
+                var veliGroup = await groupRepository.GetAsync(g => g.GroupName == "Veli" || g.GroupName == "Parent");
+                if (veliGroup == null)
+                {
+                    veliGroup = new Group { GroupName = "Veli" };
+                    groupRepository.Add(veliGroup);
+                    await groupRepository.SaveChangesAsync();
+                }
+
+                var ogretmenGroup = await groupRepository.GetAsync(g => g.GroupName == "Öğretmen" || g.GroupName == "Ogretmen" || g.GroupName == "Teacher");
+                if (ogretmenGroup == null)
+                {
+                    ogretmenGroup = new Group { GroupName = "Öğretmen" };
+                    groupRepository.Add(ogretmenGroup);
+                    await groupRepository.SaveChangesAsync();
+                }
+
                 if (userGroupRepository != null)
                 {
                     var userGroup = await userGroupRepository.GetAsync(ug => ug.UserId == 1 && ug.GroupId == superAdminGroup.Id);

@@ -41,6 +41,7 @@ namespace Business.Handlers.Students.Queries
                     TenantId = student.TenantId,
                     PersonId = student.PersonId,
                     StudentNumber = student.StudentNumber,
+                    ParentAccessCode = student.ParentAccessCode ?? $"KRS-{student.Id:D5}",
                     EnrollmentDate = student.EnrollmentDate
                 };
                 return new SuccessDataResult<StudentGetByIdDto>(dto);

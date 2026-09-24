@@ -78,6 +78,7 @@ namespace Business.Handlers.Students.Commands
                     Id = isThereStudentRecord.Id,
                     PersonId = isThereStudentRecord.PersonId,
                     StudentNumber = isThereStudentRecord.StudentNumber,
+                    ParentAccessCode = isThereStudentRecord.ParentAccessCode,
                     EnrollmentDate = isThereStudentRecord.EnrollmentDate
                 };
 

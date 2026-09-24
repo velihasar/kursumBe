@@ -160,6 +160,9 @@ namespace WebAPI
             // SignalR Kaydı
             services.AddSignalR();
 
+            // Otomatik Aylık Aidat Tahakkuk Arka Plan Servisi (Background Job)
+            services.AddHostedService<Business.Services.MonthlyFeeDueBackgroundService>();
+
             base.ConfigureServices(services);
         }
 

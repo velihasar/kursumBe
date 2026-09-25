@@ -8,6 +8,7 @@ using Core.Aspects.Autofac.Logging;
 using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
 using Core.Entities.Concrete;
 using Core.Utilities.Results;
+using Core.Utilities.Security.Hashing;
 using DataAccess.Abstract;
 using MediatR;
 
@@ -52,13 +53,23 @@ namespace Business.Handlers.Users.Commands
 
                 var cleanMobile = !string.IsNullOrWhiteSpace(request.MobilePhones) ? request.MobilePhones.Replace(" ", "").Trim() : null;
 
+                byte[] passwordHash = null;
+                byte[] passwordSalt = null;
+
+                if (!string.IsNullOrWhiteSpace(request.Password))
+                {
+                    HashingHelper.CreatePasswordHash(request.Password, out passwordSalt, out passwordHash);
+                }
+
                 var user = new User
                 {
                     Email = request.Email,
                     FullName = request.FullName,
                     Status = true,
                     CitizenId = request.CitizenId,
-                    MobilePhones = cleanMobile
+                    MobilePhones = cleanMobile,
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt
                 };
 
                 _userRepository.Add(user);

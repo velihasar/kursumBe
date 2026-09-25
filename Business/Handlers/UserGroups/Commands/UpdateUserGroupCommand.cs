@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Business.BusinessAspects;
@@ -31,12 +31,14 @@ namespace Business.Handlers.UserGroups.Commands
 
 
             [SecuredOperation(Priority = 1)]
-            [CacheRemoveAspect()]
+            [CacheRemoveAspect("GetUsers")]
+            [CacheRemoveAspect("GetUserGroups")]
             [LogAspect(typeof(FileLogger))]
             public async Task<IResult> Handle(UpdateUserGroupCommand request, CancellationToken cancellationToken)
             {
+                var groupIds = request.GroupId ?? System.Array.Empty<int>();
                 var userGroupList =
-                    request.GroupId.Select(x => new UserGroup() { GroupId = x, UserId = request.UserId });
+                    groupIds.Select(x => new UserGroup() { GroupId = x, UserId = request.UserId });
 
                 await _userGroupRepository.BulkInsert(request.UserId, userGroupList);
                 await _userGroupRepository.SaveChangesAsync();

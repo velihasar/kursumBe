@@ -18,11 +18,11 @@ WORKDIR "/src/WebAPI"
 RUN dotnet build "WebAPI.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "WebAPI.csproj" -c Release -o /app/build
+RUN dotnet publish "WebAPI.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/build .
-ENV ASPNETCORE_URLS="https://*:44375"
-ENV ASPNETCORE_ENVIRONMENT Docker
-ENTRYPOINT ["dotnet", "WebAPI.dll"]
+COPY --from=publish /app/publish .
+ENV ASPNETCORE_URLS="http://+:80"
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENTRYPOINT ["dotnet", "WebAPI.dll"]

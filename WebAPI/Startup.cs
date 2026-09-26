@@ -217,16 +217,13 @@ namespace WebAPI
 
             _ = app.UseDbOperationClaimCreator();
             
-            if (!env.IsProduction())
+            // Swagger'ı tüm ortamlarda aktif et
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("v1/swagger.json", "okulBe");
-                    c.DocExpansion(DocExpansion.None);
-                });
-            }
+                c.SwaggerEndpoint("v1/swagger.json", "Kursum API");
+                c.DocExpansion(DocExpansion.None);
+            });
             app.UseCors("AllowOrigin");
 
             // Rate Limiting Middleware

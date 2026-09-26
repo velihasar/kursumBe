@@ -1,11 +1,18 @@
+# Kursum backend — Coolify (Sinavim ve Cuzdanim düzenine benzer)
+version: '3.8'
+
 services:
   webapi:
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: WebAPI/Dockerfile
+    # Host 80 Coolify Traefik tarafindan kullanildigi icin, Sinavim (8090) ve Cuzdanim (8080) gibi bos bir port kullaniyoruz:
+    ports:
+      - "8095:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
-    ports:
-      - "80:80"
     restart: unless-stopped

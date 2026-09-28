@@ -125,7 +125,12 @@ namespace Core.Extensions
                 httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
             
-            var result = JsonSerializer.Serialize(new { message });
+            var result = JsonSerializer.Serialize(new { 
+                message, 
+                error = e.Message, 
+                stackTrace = e.StackTrace,
+                innerException = e.InnerException?.Message 
+            });
             await httpContext.Response.WriteAsync(result);
         }
         

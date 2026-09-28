@@ -65,13 +65,26 @@ namespace Business.Handlers.Students.Commands
                 if (isThereStudentRecord)
                     return new ErrorDataResult<StudentCreateResponseDto>(Messages.NameAlreadyExist);
 
+                string finalStudentNumber = request.StudentNumber?.Trim();
+                if (string.IsNullOrWhiteSpace(finalStudentNumber))
+                {
+                    // Otomatik ardışık öğrenci numarası üret (Örn: 1001, 1002...)
+                    var count = _studentRepository.Query().Count(s => s.TenantId == targetTenantId && s.IsDeleted == false);
+                    int nextNum = 1001 + count;
+                    while (_studentRepository.Query().Any(s => s.TenantId == targetTenantId && s.StudentNumber == nextNum.ToString() && s.IsDeleted == false))
+                    {
+                        nextNum++;
+                    }
+                    finalStudentNumber = nextNum.ToString();
+                }
+
                 var accessCode = GenerateAccessCode(_studentRepository);
 
                 var addedStudent = new Student
                 {
                     TenantId = targetTenantId,
                     PersonId = request.PersonId,
-                    StudentNumber = request.StudentNumber,
+                    StudentNumber = finalStudentNumber,
                     ParentAccessCode = accessCode,
                     EnrollmentDate = request.EnrollmentDate,
                     IsActive = true,

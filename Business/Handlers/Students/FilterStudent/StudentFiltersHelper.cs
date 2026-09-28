@@ -27,10 +27,12 @@ namespace Business.Handlers.Students.FilterStudent
         public static Expression<Func<Student, bool>> CreateStudentCommandFilter(CreateStudentCommand request)
         {
             var tenantId = UserInfoExtensions.GetTenantIdOrZero();
+            var studentNumber = request.StudentNumber?.Trim();
             return c =>
                 c.IsDeleted == false &&
                 c.IsActive == true &&
-                c.StudentNumber == request.StudentNumber &&
+                !string.IsNullOrEmpty(studentNumber) &&
+                c.StudentNumber == studentNumber &&
                 (tenantId <= 0 || c.TenantId == tenantId);
         }
 

@@ -66,7 +66,14 @@ namespace Business.Handlers.Students.Commands
                 isThereStudentRecord.UpdatedDate = System.DateTime.Now;
 
                 isThereStudentRecord.PersonId = request.PersonId;
-                isThereStudentRecord.StudentNumber = request.StudentNumber;
+                if (!string.IsNullOrWhiteSpace(request.StudentNumber))
+                {
+                    isThereStudentRecord.StudentNumber = request.StudentNumber.Trim();
+                }
+                else if (string.IsNullOrWhiteSpace(isThereStudentRecord.StudentNumber))
+                {
+                    isThereStudentRecord.StudentNumber = (1000 + isThereStudentRecord.Id).ToString();
+                }
                 isThereStudentRecord.EnrollmentDate = request.EnrollmentDate;
                 isThereStudentRecord.IsActive = request.IsActive;
 

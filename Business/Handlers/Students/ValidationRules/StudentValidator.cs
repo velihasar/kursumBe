@@ -10,7 +10,6 @@ namespace Business.Handlers.Students.ValidationRules
         public CreateStudentValidator()
         {
             RuleFor(x => x.PersonId).NotEmpty();
-            RuleFor(x => x.StudentNumber).NotEmpty();
             RuleFor(x => x.EnrollmentDate).NotEmpty();
         }
     }
@@ -20,7 +19,6 @@ namespace Business.Handlers.Students.ValidationRules
         {
             RuleFor(x => x.Id).NotEmpty();
             RuleFor(x => x.PersonId).NotEmpty();
-            RuleFor(x => x.StudentNumber).NotEmpty();
             RuleFor(x => x.EnrollmentDate).NotEmpty();
         }
     }

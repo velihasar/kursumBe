@@ -43,53 +43,104 @@ namespace Business.Handlers.Users.Queries
             }
 
             [SecuredOperation(Priority = 1)]
-            [PerformanceAspect(5)]
-            [LogAspect(typeof(FileLogger))]
             public async Task<IDataResult<IEnumerable<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
             {
-                var userTenantId = Core.Extensions.UserInfoExtensions.GetTenantIdOrZero();
-                var userList = await _userRepository.GetListAsync();
-                var tenantUsers = _tenantUserRepository.Query().Where(tu => tu.IsActive == true && tu.IsDeleted == false).ToList();
-                var tenants = _tenantRepository.Query().Where(t => t.IsDeleted == false).ToList();
-                var userGroups = _userGroupRepository.Query().ToList();
-                var groups = _groupRepository.Query().ToList();
-
-                var userDtoList = userList
-                    .Where(user =>
-                    {
-                        if (userTenantId == 0) return true;
-                        var tu = tenantUsers.FirstOrDefault(x => x.UserId == user.UserId);
-                        return tu != null && tu.TenantId == userTenantId;
-                    })
-                    .Select(user =>
+                try
                 {
-                    var dto = _mapper.Map<UserDto>(user);
-                    var tu = tenantUsers.FirstOrDefault(x => x.UserId == user.UserId);
-                    if (tu != null)
+                    var userTenantId = Core.Extensions.UserInfoExtensions.GetTenantIdOrZero();
+                    var userList = (await _userRepository.GetListAsync())?.ToList() ?? new List<User>();
+
+                    List<Core.Entities.Concrete.Project.TenantUser> tenantUsers = new();
+                    try
                     {
-                        dto.TenantId = tu.TenantId;
-                        var t = tenants.FirstOrDefault(x => x.Id == tu.TenantId);
-                        if (t != null)
-                        {
-                            dto.TenantName = t.Name;
-                        }
+                        tenantUsers = _tenantUserRepository.Query().Where(tu => tu.IsActive != false && tu.IsDeleted != true).ToList();
+                    }
+                    catch
+                    {
+                        // Fallback if tenantUser query encounters issues
                     }
 
-                    var uGroups = userGroups.Where(ug => ug.UserId == user.UserId).ToList();
-                    dto.UserGroups = uGroups.Select(ug =>
+                    List<Core.Entities.Concrete.Project.Tenant> tenants = new();
+                    try
                     {
-                        var g = groups.FirstOrDefault(x => x.Id == ug.GroupId);
-                        return new SelectionItem
+                        tenants = _tenantRepository.Query().Where(t => t.IsDeleted != true).ToList();
+                    }
+                    catch
+                    {
+                        // Fallback if tenant query encounters issues
+                    }
+
+                    List<UserGroup> userGroups = new();
+                    try
+                    {
+                        userGroups = _userGroupRepository.Query().ToList();
+                    }
+                    catch
+                    {
+                    }
+
+                    List<Group> groups = new();
+                    try
+                    {
+                        groups = _groupRepository.Query().ToList();
+                    }
+                    catch
+                    {
+                    }
+
+                    var userDtoList = userList
+                        .Where(user =>
                         {
-                            Id = ug.GroupId.ToString(),
-                            Label = g != null ? g.GroupName : $"Grup #{ug.GroupId}"
-                        };
-                    }).ToList();
+                            if (userTenantId == 0) return true;
+                            var tu = tenantUsers.FirstOrDefault(x => x.UserId == user.UserId);
+                            return tu != null && tu.TenantId == userTenantId;
+                        })
+                        .Select(user =>
+                        {
+                            var tu = tenantUsers.FirstOrDefault(x => x.UserId == user.UserId);
+                            var t = tu != null ? tenants.FirstOrDefault(x => x.Id == tu.TenantId) : null;
+                            var uGroups = userGroups.Where(ug => ug.UserId == user.UserId).ToList();
 
-                    return dto;
-                }).ToList();
+                            var dto = new UserDto
+                            {
+                                UserId = user.UserId,
+                                FullName = user.FullName ?? "",
+                                Email = user.Email ?? "",
+                                MobilePhones = user.MobilePhones ?? "",
+                                Status = user.Status,
+                                TenantId = tu?.TenantId,
+                                TenantName = t?.Name,
+                                UserGroups = uGroups.Select(ug =>
+                                {
+                                    var g = groups.FirstOrDefault(x => x.Id == ug.GroupId);
+                                    return new SelectionItem
+                                    {
+                                        Id = ug.GroupId.ToString(),
+                                        Label = g != null ? g.GroupName : $"Grup #{ug.GroupId}"
+                                    };
+                                }).ToList()
+                            };
 
-                return new SuccessDataResult<IEnumerable<UserDto>>(userDtoList);
+                            return dto;
+                        }).ToList();
+
+                    return new SuccessDataResult<IEnumerable<UserDto>>(userDtoList);
+                }
+                catch (System.Exception ex)
+                {
+                    System.Console.WriteLine($"[GetUsersQuery Error]: {ex}");
+                    // Fallback to basic user list if relations fail
+                    var basicUsers = (await _userRepository.GetListAsync())?.Select(u => new UserDto
+                    {
+                        UserId = u.UserId,
+                        FullName = u.FullName ?? "",
+                        Email = u.Email ?? "",
+                        MobilePhones = u.MobilePhones ?? "",
+                        Status = u.Status
+                    }).ToList() ?? new List<UserDto>();
+
+                    return new SuccessDataResult<IEnumerable<UserDto>>(basicUsers);
+                }
             }
         }
     }

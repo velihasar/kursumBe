@@ -273,7 +273,8 @@ namespace Business
             services.AddTransient<IOperationClaimRepository, OperationClaimRepository>();
             services.AddTransient<IGroupRepository, GroupRepository>();
             services.AddTransient<IGroupClaimRepository, GroupClaimRepository>();
-
+            services.AddTransient<IUserGroupRepository, UserGroupRepository>();
+            services.AddTransient<IUserDeviceRepository, UserDeviceRepository>();
 
             services.AddDbContext<ProjectDbContext>();
 

@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Business.BusinessAspects;
 using Business.Constants;
@@ -30,7 +30,25 @@ namespace Business.Handlers.UserGroups.Commands
             [LogAspect(typeof(FileLogger))]
             public async Task<IResult> Handle(DeleteUserGroupCommand request, CancellationToken cancellationToken)
             {
+                var currentUserId = Core.Extensions.UserInfoExtensions.GetUserIdOrZero();
+                var isSuperAdmin = Business.Helpers.SecurityHelper.IsSuperAdmin();
+
+                // 1. SuperAdmin dışındaki hiçkimse kendi rollerini silemez/değiştiremez
+                if (request.Id == currentUserId && !isSuperAdmin)
+                {
+                    return new ErrorResult("Süper Admin dışındaki kullanıcılar kendi rollerini veya yetkilerini değiştiremezler.");
+                }
+
                 var entityToDelete = await _userGroupRepository.GetAsync(x => x.UserId == request.Id);
+                if (entityToDelete == null)
+                {
+                    return new ErrorResult("Kullanıcı grubu bulunamadı.");
+                }
+
+                if (!isSuperAdmin && Business.Helpers.SecurityHelper.IsSuperAdminGroup(entityToDelete.GroupId))
+                {
+                    return new ErrorResult("Süper Admin grubunu sadece bir Süper Admin silebilir.");
+                }
 
                 _userGroupRepository.Delete(entityToDelete);
                 await _userGroupRepository.SaveChangesAsync();

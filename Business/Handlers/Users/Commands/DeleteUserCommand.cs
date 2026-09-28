@@ -29,7 +29,19 @@ namespace Business.Handlers.Users.Commands
             [LogAspect(typeof(FileLogger))]
             public async Task<IResult> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
             {
+                var currentUserId = Core.Extensions.UserInfoExtensions.GetUserIdOrZero();
+                var isSuperAdmin = Business.Helpers.SecurityHelper.IsSuperAdmin();
+
+                if (request.UserId == currentUserId && !isSuperAdmin)
+                {
+                    return new ErrorResult("Süper Admin dışındaki kullanıcılar kendi hesaplarını silemezler.");
+                }
+
                 var userToDelete = _userRepository.Get(p => p.UserId == request.UserId);
+                if (userToDelete == null)
+                {
+                    return new ErrorResult("Kullanıcı bulunamadı.");
+                }
 
                 userToDelete.Status = false;
                 _userRepository.Update(userToDelete);

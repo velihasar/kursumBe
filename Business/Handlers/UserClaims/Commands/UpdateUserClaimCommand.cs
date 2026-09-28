@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Business.BusinessAspects;
@@ -37,7 +37,24 @@ namespace Business.Handlers.UserClaims.Commands
             [LogAspect(typeof(FileLogger))]
             public async Task<IResult> Handle(UpdateUserClaimCommand request, CancellationToken cancellationToken)
             {
-                var userList = request.ClaimId.Select(x => new UserClaim() { ClaimId = x, UserId = request.UserId });
+                var currentUserId = Core.Extensions.UserInfoExtensions.GetUserIdOrZero();
+                var isSuperAdmin = Business.Helpers.SecurityHelper.IsSuperAdmin();
+
+                // 1. SuperAdmin dışındaki hiçkimse kendine yetki veremez
+                if (request.UserId == currentUserId && !isSuperAdmin)
+                {
+                    return new ErrorResult("Süper Admin dışındaki kullanıcılar kendi yetkilerini değiştiremezler.");
+                }
+
+                var claimIds = request.ClaimId ?? System.Array.Empty<int>();
+
+                // 2. SuperAdmin dışında kimse kimseye SuperAdmin yetkisi veremez
+                if (!isSuperAdmin && Business.Helpers.SecurityHelper.ContainsSuperAdminClaim(claimIds))
+                {
+                    return new ErrorResult("Süper Admin yetkisini sadece bir Süper Admin atayabilir.");
+                }
+
+                var userList = claimIds.Select(x => new UserClaim() { ClaimId = x, UserId = request.UserId });
 
                 await _userClaimRepository.BulkInsert(request.UserId, userList);
                 await _userClaimRepository.SaveChangesAsync();

@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Business.BusinessAspects;
 using Business.Constants;
@@ -31,6 +31,21 @@ namespace Business.Handlers.UserGroups.Commands
             [LogAspect(typeof(FileLogger))]
             public async Task<IResult> Handle(CreateUserGroupCommand request, CancellationToken cancellationToken)
             {
+                var currentUserId = Core.Extensions.UserInfoExtensions.GetUserIdOrZero();
+                var isSuperAdmin = Business.Helpers.SecurityHelper.IsSuperAdmin();
+
+                // 1. SuperAdmin dışındaki hiçkimse kendine yetki/rol veremez
+                if (request.UserId == currentUserId && !isSuperAdmin)
+                {
+                    return new ErrorResult("Süper Admin dışındaki kullanıcılar kendi rollerini veya yetkilerini değiştiremezler.");
+                }
+
+                // 2. SuperAdmin dışında kimse kimseye SuperAdmin rolünü veremez
+                if (!isSuperAdmin && Business.Helpers.SecurityHelper.IsSuperAdminGroup(request.GroupId))
+                {
+                    return new ErrorResult("Süper Admin rolünü sadece bir Süper Admin atayabilir.");
+                }
+
                 var userGroup = new UserGroup
                 {
                     GroupId = request.GroupId,

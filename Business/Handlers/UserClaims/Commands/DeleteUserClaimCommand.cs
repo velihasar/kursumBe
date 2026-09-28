@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Business.BusinessAspects;
 using Business.Constants;
@@ -30,7 +30,25 @@ namespace Business.Handlers.UserClaims.Commands
             [LogAspect(typeof(FileLogger))]
             public async Task<IResult> Handle(DeleteUserClaimCommand request, CancellationToken cancellationToken)
             {
+                var currentUserId = Core.Extensions.UserInfoExtensions.GetUserIdOrZero();
+                var isSuperAdmin = Business.Helpers.SecurityHelper.IsSuperAdmin();
+
+                // 1. SuperAdmin dışındaki hiçkimse kendi yetkilerini silemez/değiştiremez
+                if (request.Id == currentUserId && !isSuperAdmin)
+                {
+                    return new ErrorResult("Süper Admin dışındaki kullanıcılar kendi yetkilerini değiştiremezler.");
+                }
+
                 var entityToDelete = await _userClaimRepository.GetAsync(x => x.UserId == request.Id);
+                if (entityToDelete == null)
+                {
+                    return new ErrorResult("Kullanıcı yetkisi bulunamadı.");
+                }
+
+                if (!isSuperAdmin && Business.Helpers.SecurityHelper.IsSuperAdminClaim(entityToDelete.ClaimId))
+                {
+                    return new ErrorResult("Süper Admin yetkisini sadece bir Süper Admin silebilir.");
+                }
 
                 _userClaimRepository.Delete(entityToDelete);
                 await _userClaimRepository.SaveChangesAsync();

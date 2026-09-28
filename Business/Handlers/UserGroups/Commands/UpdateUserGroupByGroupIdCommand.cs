@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Business.BusinessAspects;
@@ -33,7 +33,23 @@ namespace Business.Handlers.UserGroups.Commands
             [LogAspect(typeof(FileLogger))]
             public async Task<IResult> Handle(UpdateUserGroupByGroupIdCommand request, CancellationToken cancellationToken)
             {
-                var list = request.UserIds.Select(x => new UserGroup() { GroupId = request.GroupId, UserId = x });
+                var currentUserId = Core.Extensions.UserInfoExtensions.GetUserIdOrZero();
+                var isSuperAdmin = Business.Helpers.SecurityHelper.IsSuperAdmin();
+                var userIds = request.UserIds ?? System.Array.Empty<int>();
+
+                // 1. SuperAdmin dışındaki hiçkimse kendine yetki/rol veremez
+                if (!isSuperAdmin && userIds.Contains(currentUserId))
+                {
+                    return new ErrorResult("Süper Admin dışındaki kullanıcılar kendilerine rol veya yetki atayamazlar.");
+                }
+
+                // 2. SuperAdmin dışında kimse kimseye SuperAdmin rolünü veremez
+                if (!isSuperAdmin && Business.Helpers.SecurityHelper.IsSuperAdminGroup(request.GroupId))
+                {
+                    return new ErrorResult("Süper Admin rolünü sadece bir Süper Admin atayabilir.");
+                }
+
+                var list = userIds.Select(x => new UserGroup() { GroupId = request.GroupId, UserId = x });
                 await _userGroupRepository.BulkInsertByGroupId(request.GroupId, list);
                 await _userGroupRepository.SaveChangesAsync();
 

@@ -44,7 +44,7 @@ namespace Business.Handlers.Users.Queries
 
             [SecuredOperation(Priority = 1)]
             [PerformanceAspect(5)]
-            [LogAspect(typeof(ElasticSearchLogger))]
+            [LogAspect(typeof(FileLogger))]
             public async Task<IDataResult<IEnumerable<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
             {
                 var userTenantId = Core.Extensions.UserInfoExtensions.GetTenantIdOrZero();

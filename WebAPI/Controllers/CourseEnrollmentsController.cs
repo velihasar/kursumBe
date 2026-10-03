@@ -25,9 +25,9 @@ namespace WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<CourseEnrollmentGetAllDto>))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         [HttpGet("getall")]
-        public async Task<IActionResult> GetList([FromQuery] int? tenantId)
+        public async Task<IActionResult> GetList([FromQuery] GetCourseEnrollmentsQuery query)
         {
-            var result = await Mediator.Send(new GetCourseEnrollmentsQuery { TenantId = tenantId });
+            var result = await Mediator.Send(query ?? new GetCourseEnrollmentsQuery());
             if (result.Success)
             {
                 return Ok(result.Data);

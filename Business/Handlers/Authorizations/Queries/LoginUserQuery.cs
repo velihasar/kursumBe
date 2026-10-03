@@ -12,6 +12,7 @@ using Core.Utilities.Security.Hashing;
 using Core.Utilities.Security.Jwt;
 using DataAccess.Abstract;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Business.Handlers.Authorizations.Queries
 {
@@ -25,6 +26,7 @@ namespace Business.Handlers.Authorizations.Queries
             private readonly IUserRepository _userRepository;
             private readonly ITenantUserRepository _tenantUserRepository;
             private readonly ITenantRepository _tenantRepository;
+            private readonly IPersonRepository _personRepository;
             private readonly ITokenHelper _tokenHelper;
             private readonly IMediator _mediator;
             private readonly ICacheManager _cacheManager;
@@ -33,6 +35,7 @@ namespace Business.Handlers.Authorizations.Queries
                 IUserRepository userRepository,
                 ITenantUserRepository tenantUserRepository,
                 ITenantRepository tenantRepository,
+                IPersonRepository personRepository,
                 ITokenHelper tokenHelper,
                 IMediator mediator,
                 ICacheManager cacheManager)
@@ -40,6 +43,7 @@ namespace Business.Handlers.Authorizations.Queries
                 _userRepository = userRepository;
                 _tenantUserRepository = tenantUserRepository;
                 _tenantRepository = tenantRepository;
+                _personRepository = personRepository;
                 _tokenHelper = tokenHelper;
                 _mediator = mediator;
                 _cacheManager = cacheManager;
@@ -48,7 +52,8 @@ namespace Business.Handlers.Authorizations.Queries
             [LogAspect(typeof(FileLogger))]
             public async Task<IDataResult<AccessToken>> Handle(LoginUserQuery request, CancellationToken cancellationToken)
             {
-                var user = await _userRepository.GetAsync(u => u.Email == request.Email && u.Status);
+                var input = request.Email?.Trim();
+                var user = await _userRepository.GetAsync(u => (u.Email == input || (!string.IsNullOrEmpty(u.MobilePhones) && u.MobilePhones == input)) && u.Status);
 
                 if (user == null)
                 {
@@ -61,6 +66,38 @@ namespace Business.Handlers.Authorizations.Queries
                 }
 
                 var claims = _userRepository.GetClaims(user.UserId);
+
+                // Person / Role detection (Parent / Teacher)
+                var person = _personRepository.Query()
+                    .Include(p => p.Teacher)
+                    .Include(p => p.Parent).ThenInclude(pr => pr.Students)
+                    .FirstOrDefault(p => p.UserId == user.UserId && p.IsDeleted == false);
+
+                if (person != null)
+                {
+                    if (person.Parent != null)
+                    {
+                        if (!claims.Any(c => c.Name == "Parent" || c.Name == "Veli"))
+                        {
+                            claims.Add(new Core.Entities.Concrete.OperationClaim { Name = "Parent" });
+                        }
+                        claims.Add(new Core.Entities.Concrete.OperationClaim { Name = $"ParentId:{person.Parent.Id}" });
+                        var firstStudent = person.Parent.Students?.FirstOrDefault(s => s.IsDeleted == false)?.StudentId;
+                        if (firstStudent.HasValue && firstStudent.Value > 0)
+                        {
+                            claims.Add(new Core.Entities.Concrete.OperationClaim { Name = $"StudentId:{firstStudent.Value}" });
+                        }
+                    }
+                    if (person.Teacher != null)
+                    {
+                        if (!claims.Any(c => c.Name == "Teacher" || c.Name == "Ogretmen"))
+                        {
+                            claims.Add(new Core.Entities.Concrete.OperationClaim { Name = "Teacher" });
+                        }
+                        claims.Add(new Core.Entities.Concrete.OperationClaim { Name = $"TeacherId:{person.Teacher.Id}" });
+                    }
+                }
+
                 var tenantUser = await _tenantUserRepository.GetAsync(tu => tu.UserId == user.UserId && tu.IsDeleted == false);
                 if (tenantUser != null)
                 {

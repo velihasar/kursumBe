@@ -67,6 +67,23 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
+        /// Parent First-Time Registration & Activation with Access Code
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [Consumes("application/json")]
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IDataResult<AccessToken>))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPost("register-parent")]
+        public async Task<IActionResult> RegisterParent([FromBody] RegisterParentCommand command)
+        {
+            var result = await Mediator.Send(command);
+            return result.Success ? Ok(result) : BadRequest(result.Message);
+        }
+
+        /// <summary>
         /// Make it Forgot Password operations
         /// </summary>
         /// <remarks>tckimlikno</remarks>

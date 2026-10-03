@@ -131,6 +131,37 @@ namespace WebAPI.Controllers
             return GetResponseOnlyResultMessage(await Mediator.Send(verifyCid));
         }
 
+        /// <summary>
+        /// Delete Current User's Digital Account (Self-service account deletion for App Store / Play Store compliance)
+        /// </summary>
+        /// <returns></returns>
+        [Consumes("application/json")]
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPost("delete-account")]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var result = await Mediator.Send(new DeleteMyAccountCommand());
+            return result.Success ? Ok(result.Message) : BadRequest(result.Message);
+        }
+
+        /// <summary>
+        /// Update Current User's Profile (Name, Email, Phone, Password)
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        [Consumes("application/json")]
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UpdateMyProfileResponseDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPut("update-profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateMyProfileCommand command)
+        {
+            var result = await Mediator.Send(command);
+            return result.Success ? Ok(result) : BadRequest(result.Message);
+        }
+
         // /// <summary>
         // /// Token decode test
         // /// </summary>

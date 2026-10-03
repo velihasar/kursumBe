@@ -111,5 +111,24 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
+
+        /// <summary>
+        /// QR Code Attendance Check-in for Parent / Student.
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(QrCheckInResponseDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPost("qr-checkin")]
+        public async Task<IActionResult> QrCheckIn([FromBody] QrCheckInCommand command)
+        {
+            var result = await Mediator.Send(command);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result.Message);
+        }
     }
 }

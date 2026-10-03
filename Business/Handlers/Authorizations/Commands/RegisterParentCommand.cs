@@ -99,26 +99,33 @@ namespace Business.Handlers.Authorizations.Commands
                     return new ErrorDataResult<AccessToken>("Bu giriş kodu ile daha önce kayıt oluşturulmuştur. Lütfen e-posta veya telefon numaranız ve şifreniz ile giriş yapınız.");
                 }
 
-                // 3. Format email and phone
+                // 3. Find existing parent/person if registered during student enrollment
+                var existingParent = student.Parents?.FirstOrDefault(sp => sp.Parent != null)?.Parent;
+                var existingPerson = existingParent?.Person;
+
+                // 4. Format email and phone
                 var rawContact = request.EmailOrPhone.Trim();
                 bool isEmail = rawContact.Contains("@");
-                string email = isEmail ? rawContact : $"{rawContact}@kursum.local";
-                string phone = !isEmail ? rawContact : "";
+                string email = isEmail ? rawContact : (!string.IsNullOrWhiteSpace(existingPerson?.Email) ? existingPerson.Email : null);
+                string phone = !isEmail ? rawContact : (!string.IsNullOrWhiteSpace(existingPerson?.Phone) ? existingPerson.Phone : "");
 
-                // 4. Check if User already exists
-                var existingUser = await _userRepository.GetAsync(u => u.Email == email || (!string.IsNullOrEmpty(phone) && u.MobilePhones == phone));
+                // 5. Check if User already exists
+                var existingUser = await _userRepository.GetAsync(u => 
+                    (!string.IsNullOrEmpty(email) && u.Email == email) || 
+                    (!string.IsNullOrEmpty(phone) && u.MobilePhones == phone));
+
                 if (existingUser != null)
                 {
                     return new ErrorDataResult<AccessToken>("Bu iletişim bilgisi ile kayıtlı bir kullanıcı zaten mevcut. Lütfen Giriş Yap ekranından giriş yapınız.");
                 }
 
-                // 5. Create Password Hash and User
+                // 6. Create Password Hash and User
                 HashingHelper.CreatePasswordHash(request.Password, out var passwordSalt, out var passwordHash);
 
                 string parentFullName = !string.IsNullOrWhiteSpace(request.FullName)
                     ? request.FullName.Trim()
-                    : (student.Parents?.FirstOrDefault(sp => sp.Parent?.Person != null)?.Parent?.Person != null
-                        ? $"{student.Parents.First().Parent.Person.FirstName} {student.Parents.First().Parent.Person.LastName}".Trim()
+                    : (existingPerson != null && !string.IsNullOrWhiteSpace(existingPerson.FirstName)
+                        ? $"{existingPerson.FirstName} {existingPerson.LastName}".Trim()
                         : $"{student.Person?.LastName ?? "Öğrenci"} Velisi");
 
                 var user = new User
@@ -149,13 +156,12 @@ namespace Business.Handlers.Authorizations.Commands
                 await _tenantUserRepository.SaveChangesAsync();
 
                 // 7. Attach or Create Parent & Person
-                var existingParent = student.Parents?.FirstOrDefault(sp => sp.Parent != null)?.Parent;
-                if (existingParent != null && existingParent.Person != null)
+                if (existingParent != null && existingPerson != null)
                 {
-                    existingParent.Person.UserId = user.UserId;
-                    if (!string.IsNullOrEmpty(phone)) existingParent.Person.Phone = phone;
-                    if (isEmail) existingParent.Person.Email = email;
-                    _personRepository.Update(existingParent.Person);
+                    existingPerson.UserId = user.UserId;
+                    if (!string.IsNullOrEmpty(phone)) existingPerson.Phone = phone;
+                    if (!string.IsNullOrEmpty(email)) existingPerson.Email = email;
+                    _personRepository.Update(existingPerson);
                     await _personRepository.SaveChangesAsync();
                 }
                 else

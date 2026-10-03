@@ -107,12 +107,23 @@ namespace Business.Handlers.Authorizations.Commands
                 var rawContact = request.EmailOrPhone.Trim();
                 bool isEmail = rawContact.Contains("@");
                 string email = isEmail ? rawContact : (!string.IsNullOrWhiteSpace(existingPerson?.Email) ? existingPerson.Email : null);
-                string phone = !isEmail ? rawContact : (!string.IsNullOrWhiteSpace(existingPerson?.Phone) ? existingPerson.Phone : "");
+
+                string rawPhone = !isEmail ? rawContact : (!string.IsNullOrWhiteSpace(existingPerson?.Phone) ? existingPerson.Phone : "");
+                string phone = "";
+                string phoneWithoutZero = "";
+                if (!string.IsNullOrEmpty(rawPhone))
+                {
+                    var digits = new string(rawPhone.Where(char.IsDigit).ToArray());
+                    if (digits.StartsWith("90") && digits.Length == 12) digits = digits.Substring(2);
+                    if (digits.Length == 10 && digits.StartsWith("5")) digits = "0" + digits;
+                    phone = digits;
+                    phoneWithoutZero = digits.StartsWith("0") ? digits.Substring(1) : digits;
+                }
 
                 // 5. Check if User already exists
                 var existingUser = await _userRepository.GetAsync(u => 
                     (!string.IsNullOrEmpty(email) && u.Email == email) || 
-                    (!string.IsNullOrEmpty(phone) && u.MobilePhones == phone));
+                    (!string.IsNullOrEmpty(phone) && (u.MobilePhones == phone || u.MobilePhones == phoneWithoutZero)));
 
                 if (existingUser != null)
                 {

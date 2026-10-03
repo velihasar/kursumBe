@@ -53,7 +53,23 @@ namespace Business.Handlers.Authorizations.Queries
             public async Task<IDataResult<AccessToken>> Handle(LoginUserQuery request, CancellationToken cancellationToken)
             {
                 var input = request.Email?.Trim();
-                var user = await _userRepository.GetAsync(u => (u.Email == input || (!string.IsNullOrEmpty(u.MobilePhones) && u.MobilePhones == input)) && u.Status);
+                string normalizedPhone = "";
+                string phoneWithoutZero = "";
+                if (!string.IsNullOrEmpty(input) && !input.Contains("@"))
+                {
+                    var digits = new string(input.Where(char.IsDigit).ToArray());
+                    if (digits.StartsWith("90") && digits.Length == 12) digits = digits.Substring(2);
+                    if (digits.Length == 10 && digits.StartsWith("5")) digits = "0" + digits;
+                    normalizedPhone = digits;
+                    phoneWithoutZero = digits.StartsWith("0") ? digits.Substring(1) : digits;
+                }
+
+                var user = await _userRepository.GetAsync(u =>
+                    (u.Email == input ||
+                     (!string.IsNullOrEmpty(u.MobilePhones) && (
+                         u.MobilePhones == input ||
+                         (!string.IsNullOrEmpty(normalizedPhone) && (u.MobilePhones == normalizedPhone || u.MobilePhones == phoneWithoutZero))
+                     ))) && u.Status);
 
                 if (user == null)
                 {

@@ -42,7 +42,8 @@ namespace Business.Handlers.CourseEnrollments.Queries
                 var userTenantId = UserInfoExtensions.GetTenantIdOrZero();
                 var query = _courseEnrollmentRepository.Query()
                     .Include(x => x.Tenant)
-                    .Include(x => x.Course)
+                    .Include(x => x.Course).ThenInclude(c => c.Teacher).ThenInclude(t => t.Person)
+                    .Include(x => x.Course).ThenInclude(c => c.Branch)
                     .Include(x => x.Student).ThenInclude(s => s.Person)
                     .Where(x => x.IsDeleted == false);
 
@@ -75,6 +76,12 @@ namespace Business.Handlers.CourseEnrollments.Queries
                     StudentName = x.Student != null && x.Student.Person != null ? $"{x.Student.Person.FirstName} {x.Student.Person.LastName}".Trim() : null,
                     CourseId = x.CourseId,
                     CourseName = x.Course != null ? x.Course.Name : null,
+                    CourseCode = x.Course != null ? x.Course.Code : null,
+                    DaysOfWeek = x.Course != null ? x.Course.DaysOfWeek : null,
+                    StartTime = x.Course != null ? x.Course.StartTime : null,
+                    EndTime = x.Course != null ? x.Course.EndTime : null,
+                    TeacherName = x.Course != null && x.Course.Teacher != null && x.Course.Teacher.Person != null ? $"{x.Course.Teacher.Person.FirstName} {x.Course.Teacher.Person.LastName}".Trim() : null,
+                    BranchName = x.Course != null && x.Course.Branch != null ? x.Course.Branch.Name : null,
                     EnrollmentDate = x.EnrollmentDate,
                     CustomMonthlyFee = x.CustomMonthlyFee,
                     DueDayOfMonth = x.DueDayOfMonth,

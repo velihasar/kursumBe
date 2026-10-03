@@ -18,5 +18,11 @@ namespace Core.Entities.Dtos.CourseEnrollmentDto
         public int Status { get; set; }
         public string Notes { get; set; }
         public bool? IsActive { get; set; }
+        public string DaysOfWeek { get; set; }
+        public string StartTime { get; set; }
+        public string EndTime { get; set; }
+        public string TeacherName { get; set; }
+        public string BranchName { get; set; }
+        public string CourseCode { get; set; }
     }
 }

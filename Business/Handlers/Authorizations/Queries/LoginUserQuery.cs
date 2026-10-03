@@ -96,6 +96,7 @@ namespace Business.Handlers.Authorizations.Queries
                         if (!claims.Any(c => c.Name == "Parent" || c.Name == "Veli"))
                         {
                             claims.Add(new Core.Entities.Concrete.OperationClaim { Name = "Parent" });
+                            claims.Add(new Core.Entities.Concrete.OperationClaim { Name = "Veli" });
                         }
                         claims.Add(new Core.Entities.Concrete.OperationClaim { Name = $"ParentId:{person.Parent.Id}" });
                         var firstStudent = person.Parent.Students?.FirstOrDefault(s => s.IsDeleted == false)?.StudentId;

@@ -34,6 +34,8 @@ namespace Business.Handlers.Authorizations.Commands
             private readonly IParentRepository _parentRepository;
             private readonly IStudentParentRepository _studentParentRepository;
             private readonly ITenantUserRepository _tenantUserRepository;
+            private readonly IGroupRepository _groupRepository;
+            private readonly IUserGroupRepository _userGroupRepository;
             private readonly ITokenHelper _tokenHelper;
             private readonly ICacheManager _cacheManager;
 
@@ -44,6 +46,8 @@ namespace Business.Handlers.Authorizations.Commands
                 IParentRepository parentRepository,
                 IStudentParentRepository studentParentRepository,
                 ITenantUserRepository tenantUserRepository,
+                IGroupRepository groupRepository,
+                IUserGroupRepository userGroupRepository,
                 ITokenHelper tokenHelper,
                 ICacheManager cacheManager)
             {
@@ -53,6 +57,8 @@ namespace Business.Handlers.Authorizations.Commands
                 _parentRepository = parentRepository;
                 _studentParentRepository = studentParentRepository;
                 _tenantUserRepository = tenantUserRepository;
+                _groupRepository = groupRepository;
+                _userGroupRepository = userGroupRepository;
                 _tokenHelper = tokenHelper;
                 _cacheManager = cacheManager;
             }
@@ -89,26 +95,12 @@ namespace Business.Handlers.Authorizations.Commands
                     return new ErrorDataResult<AccessToken>("Geçersiz veya bulunamayan veli giriş kodu. Lütfen kurumunuzdan aldığınız kodu kontrol ediniz.");
                 }
 
-                // 2. Check if this student already has an activated Parent User
-                var existingLinkedParent = student.Parents?
-                    .Select(sp => sp.Parent)
-                    .FirstOrDefault(p => p != null && p.Person != null && p.Person.UserId.HasValue && p.Person.UserId.Value > 0);
-
-                if (existingLinkedParent != null)
-                {
-                    return new ErrorDataResult<AccessToken>("Bu giriş kodu ile daha önce kayıt oluşturulmuştur. Lütfen e-posta veya telefon numaranız ve şifreniz ile giriş yapınız.");
-                }
-
-                // 3. Find existing parent/person if registered during student enrollment
-                var existingParent = student.Parents?.FirstOrDefault(sp => sp.Parent != null)?.Parent;
-                var existingPerson = existingParent?.Person;
-
-                // 4. Format email and phone
+                // 2. Format and normalize contact (email or phone)
                 var rawContact = request.EmailOrPhone.Trim();
                 bool isEmail = rawContact.Contains("@");
-                string email = isEmail ? rawContact : (!string.IsNullOrWhiteSpace(existingPerson?.Email) ? existingPerson.Email : null);
+                string email = isEmail ? rawContact.ToLower() : null;
 
-                string rawPhone = !isEmail ? rawContact : (!string.IsNullOrWhiteSpace(existingPerson?.Phone) ? existingPerson.Phone : "");
+                string rawPhone = !isEmail ? rawContact : "";
                 string phone = "";
                 string phoneWithoutZero = "";
                 if (!string.IsNullOrEmpty(rawPhone))
@@ -120,17 +112,60 @@ namespace Business.Handlers.Authorizations.Commands
                     phoneWithoutZero = digits.StartsWith("0") ? digits.Substring(1) : digits;
                 }
 
-                // 5. Check if User already exists
+                // Helper to normalize any phone string
+                string NormalizeDbPhone(string p)
+                {
+                    if (string.IsNullOrWhiteSpace(p)) return "";
+                    var d = new string(p.Where(char.IsDigit).ToArray());
+                    if (d.StartsWith("90") && d.Length == 12) d = d.Substring(2);
+                    if (d.Length == 10 && d.StartsWith("5")) d = "0" + d;
+                    return d;
+                }
+
+                // 3. Check if a User already exists with this phone or email
                 var existingUser = await _userRepository.GetAsync(u => 
                     (!string.IsNullOrEmpty(email) && u.Email == email) || 
                     (!string.IsNullOrEmpty(phone) && (u.MobilePhones == phone || u.MobilePhones == phoneWithoutZero)));
 
                 if (existingUser != null)
                 {
-                    return new ErrorDataResult<AccessToken>("Bu iletişim bilgisi ile kayıtlı bir kullanıcı zaten mevcut. Lütfen Giriş Yap ekranından giriş yapınız.");
+                    return new ErrorDataResult<AccessToken>("Bu iletişim bilgisi ile kayıtlı bir kullanıcı zaten mevcut. Lütfen Giriş Yap ekranından şifreniz ile giriş yapınız.");
                 }
 
-                // 6. Create Password Hash and User
+                // 4. Check matching parent from student's enrolled parent list
+                var matchedStudentParent = student.Parents?.FirstOrDefault(sp =>
+                    sp.Parent?.Person != null && (
+                        (isEmail && !string.IsNullOrWhiteSpace(sp.Parent.Person.Email) && sp.Parent.Person.Email.Trim().ToLower() == email) ||
+                        (!isEmail && !string.IsNullOrWhiteSpace(sp.Parent.Person.Phone) && NormalizeDbPhone(sp.Parent.Person.Phone) == phone)
+                    ));
+
+                // If matched parent already has an activated account
+                if (matchedStudentParent?.Parent?.Person != null &&
+                    matchedStudentParent.Parent.Person.UserId.HasValue &&
+                    matchedStudentParent.Parent.Person.UserId.Value > 0)
+                {
+                    return new ErrorDataResult<AccessToken>("Bu veli için zaten hesap oluşturulmuştur. Lütfen şifreniz ile Giriş Yap ekranından giriş yapınız.");
+                }
+
+                // If no exact phone/email match, look for an unlinked parent record without contact info
+                var targetStudentParent = matchedStudentParent ?? student.Parents?.FirstOrDefault(sp =>
+                    sp.Parent?.Person != null &&
+                    (!sp.Parent.Person.UserId.HasValue || sp.Parent.Person.UserId == 0) &&
+                    string.IsNullOrWhiteSpace(sp.Parent.Person.Phone) &&
+                    string.IsNullOrWhiteSpace(sp.Parent.Person.Email));
+
+                var existingPerson = targetStudentParent?.Parent?.Person;
+
+                // Determine final email and phone for user (use entered value, or fallback to existing parent data)
+                string finalEmail = !string.IsNullOrWhiteSpace(email) 
+                    ? email 
+                    : (!string.IsNullOrWhiteSpace(existingPerson?.Email) ? existingPerson.Email.Trim().ToLower() : null);
+
+                string finalPhone = !string.IsNullOrWhiteSpace(phone) 
+                    ? phone 
+                    : (!string.IsNullOrWhiteSpace(existingPerson?.Phone) ? NormalizeDbPhone(existingPerson.Phone) : "");
+
+                // 5. Create Password Hash and User
                 HashingHelper.CreatePasswordHash(request.Password, out var passwordSalt, out var passwordHash);
 
                 string parentFullName = !string.IsNullOrWhiteSpace(request.FullName)
@@ -141,8 +176,8 @@ namespace Business.Handlers.Authorizations.Commands
 
                 var user = new User
                 {
-                    Email = email,
-                    MobilePhones = phone,
+                    Email = finalEmail,
+                    MobilePhones = finalPhone,
                     FullName = parentFullName,
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
@@ -166,12 +201,32 @@ namespace Business.Handlers.Authorizations.Commands
                 _tenantUserRepository.Add(tenantUser);
                 await _tenantUserRepository.SaveChangesAsync();
 
-                // 7. Attach or Create Parent & Person
-                if (existingParent != null && existingPerson != null)
+                // 6.1 Assign to 'Veli' Group
+                var veliGroup = await _groupRepository.GetAsync(g => g.GroupName == "Veli" || g.GroupName == "Parent");
+                if (veliGroup == null)
                 {
+                    veliGroup = new Group { GroupName = "Veli" };
+                    _groupRepository.Add(veliGroup);
+                    await _groupRepository.SaveChangesAsync();
+                }
+                _userGroupRepository.Add(new UserGroup { GroupId = veliGroup.Id, UserId = user.UserId });
+                await _userGroupRepository.SaveChangesAsync();
+
+                int createdOrUpdatedParentId = 0;
+
+                // 7. Attach or Create Parent & Person
+                if (targetStudentParent?.Parent != null && existingPerson != null)
+                {
+                    createdOrUpdatedParentId = targetStudentParent.Parent.Id;
                     existingPerson.UserId = user.UserId;
-                    if (!string.IsNullOrEmpty(phone)) existingPerson.Phone = phone;
-                    if (!string.IsNullOrEmpty(email)) existingPerson.Email = email;
+                    if (!string.IsNullOrEmpty(finalPhone)) existingPerson.Phone = finalPhone;
+                    if (!string.IsNullOrEmpty(finalEmail)) existingPerson.Email = finalEmail;
+                    if (!string.IsNullOrWhiteSpace(request.FullName))
+                    {
+                        var names = request.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        existingPerson.FirstName = names.Length > 0 ? names[0] : existingPerson.FirstName;
+                        existingPerson.LastName = names.Length > 1 ? string.Join(' ', names.Skip(1)) : existingPerson.LastName;
+                    }
                     _personRepository.Update(existingPerson);
                     await _personRepository.SaveChangesAsync();
                 }
@@ -206,6 +261,7 @@ namespace Business.Handlers.Authorizations.Commands
                     };
                     _parentRepository.Add(newParent);
                     await _parentRepository.SaveChangesAsync();
+                    createdOrUpdatedParentId = newParent.Id;
 
                     var studentParent = new StudentParent
                     {
@@ -213,7 +269,7 @@ namespace Business.Handlers.Authorizations.Commands
                         StudentId = student.Id,
                         ParentId = newParent.Id,
                         Relationship = "Veli",
-                        IsPrimary = true,
+                        IsPrimary = student.Parents?.Count == 0,
                         IsActive = true,
                         IsDeleted = false,
                         CreatedDate = DateTime.Now
@@ -224,7 +280,12 @@ namespace Business.Handlers.Authorizations.Commands
 
                 // 8. Generate Claims & AccessToken
                 var claims = _userRepository.GetClaims(user.UserId);
-                claims.Add(new OperationClaim { Name = "Parent" });
+                if (!claims.Any(c => c.Name == "Parent" || c.Name == "Veli"))
+                {
+                    claims.Add(new OperationClaim { Name = "Parent" });
+                    claims.Add(new OperationClaim { Name = "Veli" });
+                }
+                claims.Add(new OperationClaim { Name = $"ParentId:{createdOrUpdatedParentId}" });
                 claims.Add(new OperationClaim { Name = $"TenantId:{student.TenantId}" });
                 claims.Add(new OperationClaim { Name = $"StudentId:{student.Id}" });
 

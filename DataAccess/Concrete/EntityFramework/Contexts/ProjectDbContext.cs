@@ -64,6 +64,8 @@ namespace DataAccess.Concrete.EntityFramework.Contexts
         public DbSet<StudentWallet> StudentWallets { get; set; }
         public DbSet<StudentWalletTransaction> StudentWalletTransactions { get; set; }
         public DbSet<CanteenProduct> CanteenProducts { get; set; }
+        public DbSet<Announcement> Announcements { get; set; }
+        public DbSet<Event> Events { get; set; }
 
         protected IConfiguration Configuration { get; }
 

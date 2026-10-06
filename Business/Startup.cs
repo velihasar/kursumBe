@@ -161,6 +161,8 @@ namespace Business
         public void ConfigureDevelopmentServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<IEventRepository, EventRepository>();
+            services.AddTransient<IAnnouncementRepository, AnnouncementRepository>();
             services.AddTransient<ICanteenProductRepository, CanteenProductRepository>();
             services.AddTransient<IStudentWalletRepository, StudentWalletRepository>();
             services.AddTransient<IStudentWalletTransactionRepository, StudentWalletTransactionRepository>();
@@ -204,6 +206,8 @@ namespace Business
         public void ConfigureStagingServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<IEventRepository, EventRepository>();
+            services.AddTransient<IAnnouncementRepository, AnnouncementRepository>();
             services.AddTransient<ICanteenProductRepository, CanteenProductRepository>();
             services.AddTransient<IStudentWalletRepository, StudentWalletRepository>();
             services.AddTransient<IStudentWalletTransactionRepository, StudentWalletTransactionRepository>();
@@ -245,6 +249,8 @@ namespace Business
         public void ConfigureProductionServices(IServiceCollection services)
         {
             ConfigureServices(services);
+            services.AddTransient<IEventRepository, EventRepository>();
+            services.AddTransient<IAnnouncementRepository, AnnouncementRepository>();
             services.AddTransient<ICanteenProductRepository, CanteenProductRepository>();
             services.AddTransient<IStudentWalletRepository, StudentWalletRepository>();
             services.AddTransient<IStudentWalletTransactionRepository, StudentWalletTransactionRepository>();

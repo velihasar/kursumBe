@@ -57,10 +57,29 @@ namespace Business.Handlers.FeeDues.Commands
                 isThereFeeDueRecord.Period = request.Period;
                 isThereFeeDueRecord.Title = request.Title;
                 isThereFeeDueRecord.Amount = request.Amount;
-                isThereFeeDueRecord.PaidAmount = request.PaidAmount;
-                isThereFeeDueRecord.RemainingAmount = request.RemainingAmount;
+                
+                if (request.PaidAmount > 0)
+                {
+                    isThereFeeDueRecord.PaidAmount = request.PaidAmount;
+                }
+                
+                var remaining = isThereFeeDueRecord.Amount - isThereFeeDueRecord.PaidAmount;
+                isThereFeeDueRecord.RemainingAmount = remaining > 0 ? remaining : 0;
+
+                if (isThereFeeDueRecord.RemainingAmount <= 0 && isThereFeeDueRecord.Amount > 0 && isThereFeeDueRecord.PaidAmount >= isThereFeeDueRecord.Amount)
+                {
+                    isThereFeeDueRecord.Status = 2; // Tam Ödendi
+                }
+                else if (isThereFeeDueRecord.PaidAmount > 0)
+                {
+                    isThereFeeDueRecord.Status = 1; // Kısmi Ödendi
+                }
+                else
+                {
+                    isThereFeeDueRecord.Status = 0; // Ödenmedi
+                }
+
                 isThereFeeDueRecord.DueDate = request.DueDate;
-                isThereFeeDueRecord.Status = request.Status;
                 isThereFeeDueRecord.Description = request.Description;
                 isThereFeeDueRecord.UpdatedBy = userId > 0 ? userId : null;
                 isThereFeeDueRecord.UpdatedDate = System.DateTime.Now;

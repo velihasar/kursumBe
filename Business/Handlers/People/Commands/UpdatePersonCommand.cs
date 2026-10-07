@@ -72,11 +72,11 @@ namespace Business.Handlers.People.Commands
                 var cleanPhone = !string.IsNullOrWhiteSpace(request.Phone) ? request.Phone.Replace(" ", "").Trim() : null;
 
                 isTherePersonRecord.UserId = request.UserId;
-                isTherePersonRecord.FirstName = request.FirstName;
-                isTherePersonRecord.LastName = request.LastName;
+                isTherePersonRecord.FirstName = request.FirstName.ToTurkishTitleCase();
+                isTherePersonRecord.LastName = request.LastName.ToTurkishTitleCase();
                 isTherePersonRecord.DateOfBirth = request.DateOfBirth;
                 isTherePersonRecord.Phone = cleanPhone;
-                isTherePersonRecord.Email = request.Email;
+                isTherePersonRecord.Email = request.Email?.Trim().ToLowerInvariant();
                 isTherePersonRecord.PhotoUrl = request.PhotoUrl;
                 isTherePersonRecord.IsActive = request.IsActive;
 

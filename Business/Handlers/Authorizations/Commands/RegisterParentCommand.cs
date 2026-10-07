@@ -10,6 +10,7 @@ using Core.CrossCuttingConcerns.Caching;
 using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
 using Core.Entities.Concrete;
 using Core.Entities.Concrete.Project;
+using Core.Extensions;
 using Core.Utilities.Results;
 using Core.Utilities.Security.Hashing;
 using Core.Utilities.Security.Jwt;
@@ -169,14 +170,14 @@ namespace Business.Handlers.Authorizations.Commands
                 HashingHelper.CreatePasswordHash(request.Password, out var passwordSalt, out var passwordHash);
 
                 string parentFullName = !string.IsNullOrWhiteSpace(request.FullName)
-                    ? request.FullName.Trim()
+                    ? request.FullName.ToTurkishTitleCase()
                     : (existingPerson != null && !string.IsNullOrWhiteSpace(existingPerson.FirstName)
-                        ? $"{existingPerson.FirstName} {existingPerson.LastName}".Trim()
-                        : $"{student.Person?.LastName ?? "Öğrenci"} Velisi");
+                        ? $"{existingPerson.FirstName} {existingPerson.LastName}".ToTurkishTitleCase()
+                        : $"{student.Person?.LastName?.ToTurkishTitleCase() ?? "Öğrenci"} Velisi");
 
                 var user = new User
                 {
-                    Email = finalEmail,
+                    Email = finalEmail?.Trim().ToLowerInvariant(),
                     MobilePhones = finalPhone,
                     FullName = parentFullName,
                     PasswordHash = passwordHash,
@@ -220,10 +221,10 @@ namespace Business.Handlers.Authorizations.Commands
                     createdOrUpdatedParentId = targetStudentParent.Parent.Id;
                     existingPerson.UserId = user.UserId;
                     if (!string.IsNullOrEmpty(finalPhone)) existingPerson.Phone = finalPhone;
-                    if (!string.IsNullOrEmpty(finalEmail)) existingPerson.Email = finalEmail;
+                    if (!string.IsNullOrEmpty(finalEmail)) existingPerson.Email = finalEmail.Trim().ToLowerInvariant();
                     if (!string.IsNullOrWhiteSpace(request.FullName))
                     {
-                        var names = request.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var names = request.FullName.ToTurkishTitleCase().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                         existingPerson.FirstName = names.Length > 0 ? names[0] : existingPerson.FirstName;
                         existingPerson.LastName = names.Length > 1 ? string.Join(' ', names.Skip(1)) : existingPerson.LastName;
                     }
@@ -233,8 +234,8 @@ namespace Business.Handlers.Authorizations.Commands
                 else
                 {
                     var names = parentFullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    string fName = names.Length > 0 ? names[0] : "Veli";
-                    string lName = names.Length > 1 ? string.Join(' ', names.Skip(1)) : (student.Person?.LastName ?? "");
+                    string fName = names.Length > 0 ? names[0].ToTurkishTitleCase() : "Veli";
+                    string lName = names.Length > 1 ? string.Join(' ', names.Skip(1)).ToTurkishTitleCase() : (student.Person?.LastName?.ToTurkishTitleCase() ?? "");
 
                     var newPerson = new Person
                     {

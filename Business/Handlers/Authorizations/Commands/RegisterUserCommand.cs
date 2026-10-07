@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Business.BusinessAspects;
 using Business.Constants;
@@ -8,6 +8,7 @@ using Core.Aspects.Autofac.Logging;
 using Core.Aspects.Autofac.Validation;
 using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
 using Core.Entities.Concrete;
+using Core.Extensions;
 using Core.Utilities.Results;
 using Core.Utilities.Security.Hashing;
 using DataAccess.Abstract;
@@ -49,9 +50,8 @@ namespace Business.Handlers.Authorizations.Commands
                 HashingHelper.CreatePasswordHash(request.Password, out var passwordSalt, out var passwordHash);
                 var user = new User
                 {
-                    Email = request.Email,
-
-                    FullName = request.FullName,
+                    Email = request.Email?.Trim().ToLowerInvariant(),
+                    FullName = request.FullName.ToTurkishTitleCase(),
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
                     Status = true

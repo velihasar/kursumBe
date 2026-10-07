@@ -83,9 +83,9 @@ namespace Business.Handlers.Authorizations.Commands
                 }
 
                 // Update Name & Contact
-                string trimmedFirstName = request.FirstName?.Trim();
-                string trimmedLastName = request.LastName?.Trim();
-                string combinedFullName = $"{trimmedFirstName} {trimmedLastName}".Trim();
+                string formattedFirstName = request.FirstName.ToTurkishTitleCase();
+                string formattedLastName = request.LastName.ToTurkishTitleCase();
+                string combinedFullName = $"{formattedFirstName} {formattedLastName}".Trim();
 
                 if (!string.IsNullOrWhiteSpace(combinedFullName))
                 {
@@ -110,8 +110,8 @@ namespace Business.Handlers.Authorizations.Commands
                 var person = await _personRepository.GetAsync(p => p.UserId == currentUserId && p.IsDeleted == false);
                 if (person != null)
                 {
-                    if (!string.IsNullOrWhiteSpace(trimmedFirstName)) person.FirstName = trimmedFirstName;
-                    if (!string.IsNullOrWhiteSpace(trimmedLastName)) person.LastName = trimmedLastName;
+                    if (!string.IsNullOrWhiteSpace(formattedFirstName)) person.FirstName = formattedFirstName;
+                    if (!string.IsNullOrWhiteSpace(formattedLastName)) person.LastName = formattedLastName;
                     if (!string.IsNullOrWhiteSpace(request.Email)) person.Email = request.Email.Trim().ToLowerInvariant();
                     if (!string.IsNullOrWhiteSpace(request.PhoneNumber)) person.Phone = request.PhoneNumber.Trim();
 
@@ -123,8 +123,8 @@ namespace Business.Handlers.Authorizations.Commands
                 {
                     UserId = user.UserId,
                     FullName = user.FullName,
-                    FirstName = trimmedFirstName ?? person?.FirstName ?? "",
-                    LastName = trimmedLastName ?? person?.LastName ?? "",
+                    FirstName = !string.IsNullOrWhiteSpace(formattedFirstName) ? formattedFirstName : (person?.FirstName ?? ""),
+                    LastName = !string.IsNullOrWhiteSpace(formattedLastName) ? formattedLastName : (person?.LastName ?? ""),
                     Email = user.Email,
                     PhoneNumber = user.MobilePhones ?? person?.Phone ?? "",
                 };

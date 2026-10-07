@@ -6,6 +6,7 @@ using Business.Constants;
 using Core.Aspects.Autofac.Caching;
 using Core.Aspects.Autofac.Logging;
 using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
+using Core.Extensions;
 using Core.Utilities.Results;
 using DataAccess.Abstract;
 using MediatR;
@@ -41,8 +42,8 @@ namespace Business.Handlers.Users.Commands
 
                 var cleanMobile = !string.IsNullOrWhiteSpace(request.MobilePhones) ? request.MobilePhones.Replace(" ", "").Trim() : null;
 
-                isThereAnyUser.FullName = request.FullName;
-                isThereAnyUser.Email = request.Email;
+                isThereAnyUser.FullName = request.FullName.ToTurkishTitleCase();
+                isThereAnyUser.Email = request.Email?.Trim().ToLowerInvariant();
                 isThereAnyUser.MobilePhones = cleanMobile;
 
                 _userRepository.Update(isThereAnyUser);

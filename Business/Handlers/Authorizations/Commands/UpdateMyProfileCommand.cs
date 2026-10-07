@@ -64,9 +64,12 @@ namespace Business.Handlers.Authorizations.Commands
                         return new ErrorDataResult<UpdateMyProfileResponseDto>("Şifrenizi değiştirmek için mevcut şifrenizi girmeniz gerekmektedir.");
                     }
 
-                    if (user.PasswordHash != null && user.PasswordSalt != null && user.PasswordHash.Length > 0)
+                    if (user.PasswordHash != null && user.PasswordSalt != null && (user.PasswordHash.Length > 0 || user.PasswordSalt.Length > 0))
                     {
-                        if (!HashingHelper.VerifyPasswordHash(request.CurrentPassword, user.PasswordHash, user.PasswordSalt))
+                        bool isPasswordValid = HashingHelper.VerifyPasswordHash(request.CurrentPassword, user.PasswordSalt, user.PasswordHash)
+                                            || HashingHelper.VerifyPasswordHash(request.CurrentPassword, user.PasswordHash, user.PasswordSalt);
+
+                        if (!isPasswordValid)
                         {
                             return new ErrorDataResult<UpdateMyProfileResponseDto>("Mevcut şifreniz hatalı.");
                         }
@@ -77,14 +80,14 @@ namespace Business.Handlers.Authorizations.Commands
                         return new ErrorDataResult<UpdateMyProfileResponseDto>("Yeni şifre en az 4 karakter olmalıdır.");
                     }
 
-                    HashingHelper.CreatePasswordHash(request.NewPassword, out var newSalt, out var newHash);
-                    user.PasswordHash = newHash;
-                    user.PasswordSalt = newSalt;
+                    HashingHelper.CreatePasswordHash(request.NewPassword, out var passwordSalt, out var passwordHash);
+                    user.PasswordSalt = passwordSalt;
+                    user.PasswordHash = passwordHash;
                 }
 
                 // Update Name & Contact
-                string formattedFirstName = request.FirstName.ToTurkishTitleCase();
-                string formattedLastName = request.LastName.ToTurkishTitleCase();
+                string formattedFirstName = request.FirstName?.ToTurkishTitleCase() ?? "";
+                string formattedLastName = request.LastName?.ToTurkishTitleCase() ?? "";
                 string combinedFullName = $"{formattedFirstName} {formattedLastName}".Trim();
 
                 if (!string.IsNullOrWhiteSpace(combinedFullName))

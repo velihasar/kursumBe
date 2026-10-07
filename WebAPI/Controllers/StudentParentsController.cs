@@ -29,9 +29,9 @@ namespace WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<StudentParentGetAllDto>))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         [HttpGet("getall")]
-        public async Task<IActionResult> GetList()
+        public async Task<IActionResult> GetList([FromQuery] GetStudentParentsQuery query)
         {
-            var result = await Mediator.Send(new GetStudentParentsQuery());
+            var result = await Mediator.Send(query ?? new GetStudentParentsQuery());
             if (result.Success)
             {
                 return Ok(result.Data);

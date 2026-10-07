@@ -19,6 +19,7 @@ namespace Business.Handlers.FeeDues.Queries
     public class GetFeeDuesQuery : IRequest<IDataResult<IEnumerable<FeeDueGetAllDto>>>
     {
         public int? TenantId { get; set; }
+        public int? StudentId { get; set; }
 
         public class GetFeeDuesQueryHandler : IRequestHandler<GetFeeDuesQuery, IDataResult<IEnumerable<FeeDueGetAllDto>>>
         {
@@ -51,6 +52,11 @@ namespace Business.Handlers.FeeDues.Queries
                 else if (request.TenantId.HasValue && request.TenantId.Value > 0)
                 {
                     query = query.Where(x => x.TenantId == request.TenantId.Value);
+                }
+
+                if (request.StudentId.HasValue && request.StudentId.Value > 0)
+                {
+                    query = query.Where(x => x.StudentId == request.StudentId.Value);
                 }
 
                 var list = await query.ToListAsync(cancellationToken);

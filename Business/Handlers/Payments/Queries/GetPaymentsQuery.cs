@@ -19,6 +19,8 @@ namespace Business.Handlers.Payments.Queries
     public class GetPaymentsQuery : IRequest<IDataResult<IEnumerable<PaymentGetAllDto>>>
     {
         public int? TenantId { get; set; }
+        public int? StudentId { get; set; }
+        public int? ParentId { get; set; }
 
         public class GetPaymentsQueryHandler : IRequestHandler<GetPaymentsQuery, IDataResult<IEnumerable<PaymentGetAllDto>>>
         {
@@ -51,6 +53,16 @@ namespace Business.Handlers.Payments.Queries
                 else if (request.TenantId.HasValue && request.TenantId.Value > 0)
                 {
                     query = query.Where(x => x.TenantId == request.TenantId.Value);
+                }
+
+                if (request.StudentId.HasValue && request.StudentId.Value > 0)
+                {
+                    query = query.Where(x => x.StudentId == request.StudentId.Value);
+                }
+
+                if (request.ParentId.HasValue && request.ParentId.Value > 0)
+                {
+                    query = query.Where(x => x.ParentId == request.ParentId.Value);
                 }
 
                 var list = await query.ToListAsync(cancellationToken);

@@ -25,9 +25,9 @@ namespace WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<FeeDueGetAllDto>))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
         [HttpGet("getall")]
-        public async Task<IActionResult> GetList([FromQuery] int? tenantId)
+        public async Task<IActionResult> GetList([FromQuery] GetFeeDuesQuery query)
         {
-            var result = await Mediator.Send(new GetFeeDuesQuery { TenantId = tenantId });
+            var result = await Mediator.Send(query ?? new GetFeeDuesQuery());
             if (result.Success)
             {
                 return Ok(result.Data);

@@ -20,6 +20,9 @@ namespace Business.Handlers.StudentParents.Queries
 {
     public class GetStudentParentsQuery : IRequest<IDataResult<IEnumerable<StudentParentGetAllDto>>>
     {
+        public int? ParentId { get; set; }
+        public int? StudentId { get; set; }
+
         public class GetStudentParentsQueryHandler : IRequestHandler<GetStudentParentsQuery, IDataResult<IEnumerable<StudentParentGetAllDto>>>
         {
             private readonly IStudentParentRepository _studentParentRepository;
@@ -36,12 +39,23 @@ namespace Business.Handlers.StudentParents.Queries
             [SecuredOperation(Priority = 1)]
             public async Task<IDataResult<IEnumerable<StudentParentGetAllDto>>> Handle(GetStudentParentsQuery request, CancellationToken cancellationToken)
             {
-                var list = await _studentParentRepository.Query()
+                var query = _studentParentRepository.Query()
                     .Include(x => x.Student).ThenInclude(s => s.Person)
                     .Include(x => x.Student).ThenInclude(s => s.StudentBranches).ThenInclude(sb => sb.Branch)
                     .Include(x => x.Parent).ThenInclude(p => p.Person)
-                    .Where(x => x.IsDeleted == false)
-                    .ToListAsync(cancellationToken);
+                    .Where(x => x.IsDeleted == false);
+
+                if (request.ParentId.HasValue && request.ParentId.Value > 0)
+                {
+                    query = query.Where(x => x.ParentId == request.ParentId.Value);
+                }
+
+                if (request.StudentId.HasValue && request.StudentId.Value > 0)
+                {
+                    query = query.Where(x => x.StudentId == request.StudentId.Value);
+                }
+
+                var list = await query.ToListAsync(cancellationToken);
 
                 var dtos = list.Select(x => new StudentParentGetAllDto
                 {

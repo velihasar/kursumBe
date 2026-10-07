@@ -19,6 +19,9 @@ namespace Business.Handlers.Courses.Queries
     public class GetCoursesQuery : IRequest<IDataResult<IEnumerable<CourseGetAllDto>>>
     {
         public int? TenantId { get; set; }
+        public int? StudentId { get; set; }
+        public int? TeacherId { get; set; }
+        public int? BranchId { get; set; }
 
         public class GetCoursesQueryHandler : IRequestHandler<GetCoursesQuery, IDataResult<IEnumerable<CourseGetAllDto>>>
         {
@@ -51,6 +54,21 @@ namespace Business.Handlers.Courses.Queries
                 else if (request.TenantId.HasValue && request.TenantId.Value > 0)
                 {
                     query = query.Where(x => x.TenantId == request.TenantId.Value);
+                }
+
+                if (request.StudentId.HasValue && request.StudentId.Value > 0)
+                {
+                    query = query.Where(x => x.CourseEnrollments.Any(ce => ce.StudentId == request.StudentId.Value && ce.IsDeleted == false && ce.Status == 1));
+                }
+
+                if (request.TeacherId.HasValue && request.TeacherId.Value > 0)
+                {
+                    query = query.Where(x => x.TeacherId == request.TeacherId.Value);
+                }
+
+                if (request.BranchId.HasValue && request.BranchId.Value > 0)
+                {
+                    query = query.Where(x => x.BranchId == request.BranchId.Value);
                 }
 
                 var list = await query.ToListAsync(cancellationToken);

@@ -67,7 +67,7 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Parent First-Time Registration & Activation with Access Code
+        /// Parent First-Time Registration &amp; Activation with Access Code
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>

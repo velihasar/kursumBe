@@ -130,5 +130,24 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
+
+        /// <summary>
+        /// Bulk Save/Update Attendance for a Course on a Date.
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BulkAttendanceResponseDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPost("bulk-save")]
+        public async Task<IActionResult> BulkSave([FromBody] BulkAttendanceCreateDto dto)
+        {
+            var result = await Mediator.Send(new BulkCreateAttendanceCommand { Model = dto });
+            if (result.Success)
+            {
+                return Ok(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
     }
 }

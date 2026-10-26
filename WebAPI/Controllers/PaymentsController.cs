@@ -111,5 +111,22 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
+
+        /// <summary>
+        /// Gets server-side computed financial dashboard metrics.
+        /// </summary>
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(FinancialDashboardMetricsDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpGet("financial-summary")]
+        public async Task<IActionResult> GetFinancialSummary([FromQuery] GetFinancialDashboardMetricsRequestDto request)
+        {
+            var result = await Mediator.Send(new GetFinancialDashboardMetricsQuery { Model = request ?? new GetFinancialDashboardMetricsRequestDto() });
+            if (result.Success)
+            {
+                return Ok(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
     }
 }

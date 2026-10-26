@@ -115,5 +115,39 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
+
+        /// <summary>
+        /// Atomically registers a student, optionally creating their person record, parent record, and branch enrollment.
+        /// </summary>
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RegisterFullStudentResponseDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPost("register-full")]
+        public async Task<IActionResult> RegisterFull([FromBody] RegisterFullStudentRequestDto request)
+        {
+            var result = await Mediator.Send(new RegisterFullStudentCommand { Model = request });
+            if (result.Success)
+            {
+                return Ok(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
+
+        /// <summary>
+        /// Imports multiple students from Excel in a single transactional batch.
+        /// </summary>
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExcelBulkImportResponseDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpPost("bulk-excel-import")]
+        public async Task<IActionResult> BulkExcelImport([FromBody] ExcelBulkImportRequestDto request)
+        {
+            var result = await Mediator.Send(new ImportStudentsFromExcelCommand { Model = request });
+            if (result.Success)
+            {
+                return Ok(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
     }
 }

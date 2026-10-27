@@ -11,10 +11,10 @@
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<NoWarn>1701;1702;1591;EF1001</NoWarn>
+		<NoWarn>1701;1702;1591;EF1001;NU1902;NU1903</NoWarn>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<NoWarn>1701;1702;1591;EF1001</NoWarn>
+		<NoWarn>1701;1702;1591;EF1001;NU1902;NU1903</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="EntityBaseOverride\**" />

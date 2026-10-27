@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -16,7 +17,7 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 	public class MemoryCacheManager : ICacheManager
 	{
 		private readonly IMemoryCache _cache;
-		private readonly HashSet<string> _cacheKeys;
+		private readonly ConcurrentDictionary<string, byte> _cacheKeys;
 
 		public MemoryCacheManager()
 			: this(ServiceTool.ServiceProvider.GetService<IMemoryCache>())
@@ -26,7 +27,7 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 		public MemoryCacheManager(IMemoryCache cache)
 		{
 			_cache = cache ?? throw new ArgumentNullException(nameof(cache));
-			_cacheKeys = new HashSet<string>();
+			_cacheKeys = new ConcurrentDictionary<string, byte>();
 		}
 
 		public void Add(string key, object data, int duration)
@@ -35,7 +36,7 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 				throw new ArgumentException("Cache key cannot be null or empty", nameof(key));
 
 			_cache.Set(key, data, TimeSpan.FromMinutes(duration));
-			_cacheKeys.Add(key);
+			_cacheKeys.TryAdd(key, 0);
 		}
 
 		public void Add(string key, object data)
@@ -44,7 +45,7 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 				throw new ArgumentException("Cache key cannot be null or empty", nameof(key));
 
 			_cache.Set(key, data);
-			_cacheKeys.Add(key);
+			_cacheKeys.TryAdd(key, 0);
 		}
 
 		public void Add(string key, dynamic data, int duration, Type type)
@@ -112,7 +113,7 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 				return;
 
 			_cache.Remove(key);
-			_cacheKeys.Remove(key);
+			_cacheKeys.TryRemove(key, out _);
 		}
 
 		public void RemoveByPattern(string pattern)
@@ -123,12 +124,12 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 			try
 			{
 				var regex = new Regex(pattern, RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.IgnoreCase);
-				var keysToRemove = _cacheKeys.Where(key => regex.IsMatch(key)).ToList();
+				var keysToRemove = _cacheKeys.Keys.Where(key => regex.IsMatch(key)).ToList();
 
 				foreach (var key in keysToRemove)
 				{
 					_cache.Remove(key);
-					_cacheKeys.Remove(key);
+					_cacheKeys.TryRemove(key, out _);
 				}
 			}
 			catch (Exception ex)
@@ -144,7 +145,7 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 		/// <returns>List of all cache keys</returns>
 		public IEnumerable<string> GetAllKeys()
 		{
-			return _cacheKeys.ToList();
+			return _cacheKeys.Keys.ToList();
 		}
 
 		/// <summary>
@@ -152,7 +153,7 @@ namespace Core.CrossCuttingConcerns.Caching.Microsoft
 		/// </summary>
 		public void Clear()
 		{
-			foreach (var key in _cacheKeys.ToList())
+			foreach (var key in _cacheKeys.Keys.ToList())
 			{
 				_cache.Remove(key);
 			}

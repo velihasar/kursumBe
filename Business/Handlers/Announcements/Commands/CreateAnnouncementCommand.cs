@@ -13,6 +13,10 @@ using Business.Handlers.Announcements.ValidationRules;
 using Core.Entities.Concrete.Project;
 using Core.Entities.Dtos.AnnouncementDto;
 using Core.Extensions;
+using Business.Services;
+using System.Linq;
+using System.Collections.Generic;
+using System;
 
 namespace Business.Handlers.Announcements.Commands
 {
@@ -37,11 +41,19 @@ namespace Business.Handlers.Announcements.Commands
         {
             private readonly IAnnouncementRepository _announcementRepository;
             private readonly IMediator _mediator;
+            private readonly IPushNotificationService _pushNotificationService;
+            private readonly ITenantUserRepository _tenantUserRepository;
 
-            public CreateAnnouncementCommandHandler(IAnnouncementRepository announcementRepository, IMediator mediator)
+            public CreateAnnouncementCommandHandler(
+                IAnnouncementRepository announcementRepository,
+                IMediator mediator,
+                IPushNotificationService pushNotificationService,
+                ITenantUserRepository tenantUserRepository)
             {
                 _announcementRepository = announcementRepository;
                 _mediator = mediator;
+                _pushNotificationService = pushNotificationService;
+                _tenantUserRepository = tenantUserRepository;
             }
 
             [ValidationAspect(typeof(CreateAnnouncementValidator), Priority = 1)]
@@ -78,6 +90,31 @@ namespace Business.Handlers.Announcements.Commands
 
                 _announcementRepository.Add(addedAnnouncement);
                 await _announcementRepository.SaveChangesAsync();
+
+                // Tenant kullanıcılarına otomatik push bildirim gönder (Arka planda)
+                if (targetTenantId > 0 && addedAnnouncement.IsPublished)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var tenantUsers = await _tenantUserRepository.GetListAsync(tu => tu.TenantId == targetTenantId && tu.IsActive == true && tu.IsDeleted != true);
+                            var userIds = tenantUsers.Select(tu => tu.UserId).Distinct().ToList();
+                            var pushTitle = $"📢 Yeni Duyuru: {addedAnnouncement.Title}";
+                            var pushBody = string.IsNullOrWhiteSpace(addedAnnouncement.Summary) ? addedAnnouncement.Title : addedAnnouncement.Summary;
+                            var pushData = new Dictionary<string, string> { { "type", "announcement" }, { "id", addedAnnouncement.Id.ToString() } };
+
+                            foreach (var uid in userIds)
+                            {
+                                await _pushNotificationService.SendToUserAsync(uid, pushTitle, pushBody, pushData);
+                            }
+                        }
+                        catch
+                        {
+                            // Bildirim hatası duyuru kaydını engellemez
+                        }
+                    });
+                }
 
                 var dto = new AnnouncementCreateResponseDto
                 {

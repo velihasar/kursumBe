@@ -26,6 +26,7 @@ namespace Core.Entities.Concrete
         public bool Status { get; set; }
         public DateTime RecordDate { get; set; }
         public DateTime UpdateContactDate { get; set; }
+        public string FcmToken { get; set; }
 
         /// <summary>
         /// This is required when encoding token. Not in db. The default is Person.

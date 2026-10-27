@@ -13,6 +13,10 @@ using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
 using Business.Handlers.Events.ValidationRules;
+using Business.Services;
+using System.Linq;
+using System.Collections.Generic;
+using System;
 
 namespace Business.Handlers.Events.Commands
 {
@@ -38,11 +42,19 @@ namespace Business.Handlers.Events.Commands
         {
             private readonly IEventRepository _eventRepository;
             private readonly IMediator _mediator;
+            private readonly IPushNotificationService _pushNotificationService;
+            private readonly ITenantUserRepository _tenantUserRepository;
 
-            public CreateEventCommandHandler(IEventRepository eventRepository, IMediator mediator)
+            public CreateEventCommandHandler(
+                IEventRepository eventRepository,
+                IMediator mediator,
+                IPushNotificationService pushNotificationService,
+                ITenantUserRepository tenantUserRepository)
             {
                 _eventRepository = eventRepository;
                 _mediator = mediator;
+                _pushNotificationService = pushNotificationService;
+                _tenantUserRepository = tenantUserRepository;
             }
 
             [ValidationAspect(typeof(CreateEventValidator), Priority = 1)]
@@ -80,6 +92,31 @@ namespace Business.Handlers.Events.Commands
 
                 _eventRepository.Add(addedEvent);
                 await _eventRepository.SaveChangesAsync();
+
+                // Tenant kullanıcılarına otomatik push bildirim gönder (Arka planda)
+                if (targetTenantId > 0)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var tenantUsers = await _tenantUserRepository.GetListAsync(tu => tu.TenantId == targetTenantId && tu.IsActive == true && tu.IsDeleted != true);
+                            var userIds = tenantUsers.Select(tu => tu.UserId).Distinct().ToList();
+                            var pushTitle = $"📅 Yeni Etkinlik: {addedEvent.Title}";
+                            var pushBody = string.IsNullOrWhiteSpace(addedEvent.Description) ? addedEvent.Title : addedEvent.Description;
+                            var pushData = new Dictionary<string, string> { { "type", "event" }, { "id", addedEvent.Id.ToString() } };
+
+                            foreach (var uid in userIds)
+                            {
+                                await _pushNotificationService.SendToUserAsync(uid, pushTitle, pushBody, pushData);
+                            }
+                        }
+                        catch
+                        {
+                            // Bildirim hatası etkinlik kaydını engellemez
+                        }
+                    });
+                }
 
                 var dto = new EventCreateResponseDto
                 {

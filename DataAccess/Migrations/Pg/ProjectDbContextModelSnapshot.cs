@@ -2832,6 +2832,10 @@ namespace DataAccess.Migrations.Pg
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("FcmToken")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)

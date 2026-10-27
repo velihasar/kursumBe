@@ -15,6 +15,7 @@ namespace DataAccess.Concrete.Configurations
             builder.Property(x => x.Status).IsRequired();
             builder.Property(x => x.RecordDate);
             builder.Property(x => x.MobilePhones).HasMaxLength(30);
+            builder.Property(x => x.FcmToken).HasMaxLength(512);
 
             builder.HasIndex(x => x.CitizenId);
             builder.HasIndex(x => x.MobilePhones);

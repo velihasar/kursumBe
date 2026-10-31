@@ -144,9 +144,16 @@ namespace Business.Handlers.Authorizations.Queries
                 var accessToken = _tokenHelper.CreateToken<DArchToken>(user, claims);
                 accessToken.Claims = claims.Select(x => x.Name).ToList();
 
-                user.RefreshToken = accessToken.RefreshToken;
-                _userRepository.Update(user);
-                await _userRepository.SaveChangesAsync();
+                if (string.IsNullOrEmpty(user.RefreshToken))
+                {
+                    user.RefreshToken = accessToken.RefreshToken;
+                    _userRepository.Update(user);
+                    await _userRepository.SaveChangesAsync();
+                }
+                else
+                {
+                    accessToken.RefreshToken = user.RefreshToken;
+                }
 
                 _cacheManager.Add($"{CacheKeys.UserIdForClaim}={user.UserId}", claims.Select(x => x.Name));
 

@@ -54,7 +54,7 @@ namespace Core.Utilities.Security.Jwt
             {
                 Token = token,
                 Expiration = _accessTokenExpiration,
-                RefreshToken = GenerateRefreshToken()
+                RefreshToken = !string.IsNullOrEmpty(user?.RefreshToken) ? user.RefreshToken : GenerateRefreshToken()
             };
         }
 

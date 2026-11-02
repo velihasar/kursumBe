@@ -10,6 +10,7 @@ using DataAccess.Abstract;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,9 @@ namespace Business.Handlers.FeeDues.Commands
     public class GenerateMonthlyFeeDuesCommand : IRequest<IDataResult<int>>
     {
         public int? TenantId { get; set; }
-        public string Period { get; set; } // ör. "2026-10", boş ise mevcut ay
+        public string Period { get; set; } // ör. "2026-11", boş ise mevcut ay
+        public List<int> CourseEnrollmentIds { get; set; } // İsteğe bağlı: Belirli öğrencilere yansıtmak için
+        public DateTime? DueDate { get; set; } // İsteğe bağlı: Özel son ödeme tarihi
 
         public class GenerateMonthlyFeeDuesCommandHandler : IRequestHandler<GenerateMonthlyFeeDuesCommand, IDataResult<int>>
         {
@@ -61,7 +64,7 @@ namespace Business.Handlers.FeeDues.Commands
                     month = Math.Clamp(pMonth, 1, 12);
                 }
 
-                // 1. Tüm aktif kurs kayıtlarını getir
+                // 1. Aktif kurs kayıtlarını getir
                 var enrollmentQuery = _courseEnrollmentRepository.Query()
                     .Include(e => e.Course)
                     .Include(e => e.Student)
@@ -70,6 +73,12 @@ namespace Business.Handlers.FeeDues.Commands
                 if (targetTenantId > 0)
                 {
                     enrollmentQuery = enrollmentQuery.Where(e => e.TenantId == targetTenantId);
+                }
+
+                // Eğer spesifik kayıt ID'leri verilmişse sadece onları filtrele
+                if (request.CourseEnrollmentIds != null && request.CourseEnrollmentIds.Any())
+                {
+                    enrollmentQuery = enrollmentQuery.Where(e => request.CourseEnrollmentIds.Contains(e.Id));
                 }
 
                 var activeEnrollments = await enrollmentQuery.ToListAsync(cancellationToken);
@@ -88,7 +97,7 @@ namespace Business.Handlers.FeeDues.Commands
                     .Distinct()
                     .ToListAsync(cancellationToken);
 
-                var existingSet = new System.Collections.Generic.HashSet<int>(existingEnrollmentIds);
+                var existingSet = new HashSet<int>(existingEnrollmentIds);
 
                 int createdCount = 0;
                 string monthName = new DateTime(year, month, 1).ToString("MMMM", new System.Globalization.CultureInfo("tr-TR"));
@@ -99,7 +108,7 @@ namespace Business.Handlers.FeeDues.Commands
                     if (existingSet.Contains(enrollment.Id))
                         continue;
 
-                    // Aylık kurs mu kontrolü (FeeType == 1: Aylık veya fiyatı olan)
+                    // Aylık kurs mu kontrolü (Fiyatı olan kayıtlar)
                     decimal dueAmount = 0;
                     if (enrollment.CustomMonthlyFee.HasValue && enrollment.CustomMonthlyFee.Value > 0)
                     {
@@ -114,9 +123,17 @@ namespace Business.Handlers.FeeDues.Commands
                     if (dueAmount <= 0)
                         continue;
 
-                    // Vade günü hesabı (DueDayOfMonth veya ayın 15'i)
-                    int dueDay = enrollment.DueDayOfMonth > 0 ? Math.Min(28, enrollment.DueDayOfMonth) : 15;
-                    DateTime dueDate = new DateTime(year, month, dueDay);
+                    // Vade tarihi: İstekte belirtilmişse o, yoksa kayıt vadesi veya ayın 15'i
+                    DateTime dueDate;
+                    if (request.DueDate.HasValue)
+                    {
+                        dueDate = request.DueDate.Value;
+                    }
+                    else
+                    {
+                        int dueDay = enrollment.DueDayOfMonth > 0 ? Math.Min(28, enrollment.DueDayOfMonth) : 15;
+                        dueDate = new DateTime(year, month, dueDay);
+                    }
 
                     string courseName = enrollment.Course?.Name ?? "Kurs";
                     string title = $"{monthName} {year} Aidatı - {courseName}";
@@ -133,7 +150,7 @@ namespace Business.Handlers.FeeDues.Commands
                         RemainingAmount = dueAmount,
                         DueDate = dueDate,
                         Status = 0, // 0: Ödenmedi
-                        Description = $"{enrollment.EnrollmentDate:dd.MM.yyyy} tarihli kurs kaydına istinaden otomatik oluşturuldu.",
+                        Description = $"{enrollment.EnrollmentDate:dd.MM.yyyy} tarihli kurs kaydına istinaden oluşturuldu.",
                         IsActive = true,
                         IsDeleted = false,
                         CreatedBy = userId > 0 ? userId : null,

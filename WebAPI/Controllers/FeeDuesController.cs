@@ -128,5 +128,22 @@ namespace WebAPI.Controllers
             }
             return BadRequest(result.Message);
         }
+
+        /// <summary>
+        /// Get active students who do not have fee due created for given period
+        /// </summary>
+        [Produces("application/json", "text/plain")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UnassignedFeeDuesSummaryDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        [HttpGet("unassigned-students")]
+        public async Task<IActionResult> GetUnassignedStudents([FromQuery] GetUnassignedFeeDueStudentsQuery query)
+        {
+            var result = await Mediator.Send(query ?? new GetUnassignedFeeDueStudentsQuery());
+            if (result.Success)
+            {
+                return Ok(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
     }
 }
